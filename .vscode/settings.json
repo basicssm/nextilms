@@ -1,0 +1,9 @@
+{
+  "spotify.muteButtonPriority": 1,
+  "spotify.showLyricsButton": false,
+  "spotify.showMuteUnmuteVolumeButton": true,
+  "spotify.showPlayButton": true,
+  "spotify.showPauseButton": true,
+  "spotify.showMuteVolumeButton": true,
+  "spotify.trackInfoPriority": 1
+}
