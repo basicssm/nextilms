@@ -5,5 +5,7 @@
   "spotify.showPlayButton": true,
   "spotify.showPauseButton": true,
   "spotify.showMuteVolumeButton": true,
-  "spotify.trackInfoPriority": 1
+  "spotify.trackInfoPriority": 1,
+  "typescript.tsdk": "node_modules/.pnpm/typescript@4.9.4/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
 }

@@ -1,29 +1,27 @@
+"use client";
+
 import Head from "next/head";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
 import { film } from "@/types";
 import NavBar from "@/components/NavBar";
 import Films from "@/components/Films";
 import Search from "@/components/Search";
-import Back from "@/components/Back";
 
-export default function SearchPage() {
+export default function Home() {
   const [films, setFilms] = useState<[film] | []>([]);
-  const router = useRouter();
-  const { search_param } = router.query;
 
   useEffect(() => {
     try {
-      getFilms(search_param);
+      getFilms();
     } catch (err) {
       console.log("fetch error:", err);
     }
-  }, [search_param]);
+  }, []);
 
-  const getFilms = async (query: string | string[] | undefined) => {
+  const getFilms = async () => {
     const res = await fetch(
-      `${API_BASE_URL}/search/movie?api_key=${API_KEY}&language=es-ES&query=${query}&page=1&include_adult=false`
+      `${API_BASE_URL}/discover/movie?api_key=${API_KEY}&language=es-ES`
     );
     const data = await res.json();
     const films: [film] = data?.results?.map(
@@ -41,19 +39,9 @@ export default function SearchPage() {
         <link rel="icon" href="/favicon.png" />
       </Head>
       <NavBar>
-        <div className="searchNav">
-          <Back />
-          <Search />
-        </div>
+        <Search />
       </NavBar>
       <Films films={films} />
-      <style jsx>{`
-        .searchNav {
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-        }
-      `}</style>
     </>
   );
 }
