@@ -12,7 +12,7 @@ export default function Film(props: { film: filmType }) {
 
   return (
     <div className="wrapper">
-      <Link href={`film/${id}`} style={{ textDecoration: "none" }}>
+      <Link href={`/film/${id}`} style={{ textDecoration: "none" }}>
         <div className="film">
           <Image
             className="image"

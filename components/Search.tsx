@@ -1,12 +1,12 @@
 import { ChangeEvent, useState, useEffect } from "react";
-import { API_KEY, API_BASE_URL } from "../apiconfig";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useRouter } from "next/router";
 import { faFilm } from "@fortawesome/free-solid-svg-icons";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 
-export default function Search(props: { callback: Function }) {
-  const sendFilms = props.callback;
+export default function Search() {
   const [searchText, setSearchText] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
@@ -23,16 +23,9 @@ export default function Search(props: { callback: Function }) {
 
   const searchFilms = async () => {
     if (!searchText) return;
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/search/movie?api_key=${API_KEY}&language=es-ES&query=${searchText}&page=1&include_adult=false`
-      );
-      const data = await res.json();
-      sendFilms(data?.results || []);
-    } catch (err) {
-      console.log(err);
-    }
+    router.push(`/search/${searchText}`);
   };
+
   const handleInputChange = (e: ChangeEvent) => {
     const element = e.currentTarget as HTMLInputElement;
 

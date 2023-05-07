@@ -21,8 +21,6 @@ export default function DetailPage() {
     fetcher
   );
 
-  debugger;
-
   if (error) return <div>failed to load</div>;
   if (!data) return <div>loading...</div>;
 
