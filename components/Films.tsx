@@ -26,11 +26,20 @@ export default function Films({ films, loading }: { films: film[]; loading?: boo
       ))}
       <style jsx>{`
         .grid {
-          display: flex;
-          flex-wrap: wrap;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
           gap: 16px;
-          padding: 28px 24px;
-          justify-content: center;
+          padding: 24px;
+          max-width: 1400px;
+          margin: 0 auto;
+        }
+
+        @media (max-width: 480px) {
+          .grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 16px 12px;
+          }
         }
       `}</style>
     </section>

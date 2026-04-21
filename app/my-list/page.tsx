@@ -110,10 +110,10 @@ function FilmCard({
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.08);
           color: #8888aa;
-          font-size: 11px;
-          width: 24px;
-          height: 24px;
-          border-radius: 4px;
+          font-size: 12px;
+          width: 30px;
+          height: 30px;
+          border-radius: 5px;
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -129,9 +129,10 @@ function FilmCard({
           background: none;
           border: none;
           color: #44446a;
-          font-size: 12px;
+          font-size: 13px;
           cursor: pointer;
-          padding: 4px 6px;
+          padding: 6px 8px;
+          min-height: 30px;
           border-radius: 4px;
           transition: all 0.15s;
         }
@@ -209,6 +210,15 @@ function Section({
           display: flex;
           flex-wrap: wrap;
           gap: 20px;
+        }
+
+        @media (max-width: 480px) {
+          .section {
+            margin-bottom: 36px;
+          }
+          .section-grid {
+            gap: 14px;
+          }
         }
       `}</style>
     </section>
@@ -353,6 +363,18 @@ export default function MyListPage() {
         }
         :global(.browse-link:hover) {
           text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+          .page {
+            padding: 24px 14px 60px;
+          }
+          .page-header {
+            margin-bottom: 28px;
+          }
+          .page-title {
+            font-size: 1.4rem;
+          }
         }
       `}</style>
     </>
