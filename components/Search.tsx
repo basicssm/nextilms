@@ -1,8 +1,9 @@
+"use client";
+
 import { ChangeEvent, useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useRouter } from "next/navigation";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
-import "@fortawesome/fontawesome-svg-core/styles.css";
 
 export default function Search() {
   const [searchText, setSearchText] = useState("");
@@ -17,7 +18,7 @@ export default function Search() {
     };
     document.addEventListener("keydown", listener);
     return () => document.removeEventListener("keydown", listener);
-  });
+  }, [searchText, router]);
 
   return (
     <>

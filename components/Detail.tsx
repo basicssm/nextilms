@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import YouTube from "react-youtube";
 import { filmDetail } from "@/types";

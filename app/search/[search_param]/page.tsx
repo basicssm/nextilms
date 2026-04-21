@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { film } from "@/types";
@@ -11,9 +12,9 @@ import Back from "@/components/Back";
 export default function SearchPage({
   params,
 }: {
-  params: { search_param: string };
+  params: Promise<{ search_param: string }>;
 }) {
-  const { search_param } = params;
+  const { search_param } = use(params);
   const [films, setFilms] = useState<film[]>([]);
   const [loading, setLoading] = useState(true);
   const pageRef = useRef(1);
