@@ -5,13 +5,14 @@ import { film as filmType } from "@/types";
 const POSTER_BASE = "https://image.tmdb.org/t/p/w342";
 const FALLBACK = "https://picsum.photos/id/444/200/300";
 
-export default function Film({ film }: { film: filmType }) {
+export default function Film({ film, mediaType = "film" }: { film: filmType; mediaType?: "film" | "series" }) {
   const { id, title, poster_path, vote_average } = film;
   const src = poster_path ? `${POSTER_BASE}${poster_path}` : FALLBACK;
+  const href = mediaType === "series" ? `/series/${id}` : `/film/${id}`;
 
   return (
     <div className="card">
-      <Link href={`/film/${id}`} style={{ textDecoration: "none", display: "block" }}>
+      <Link href={href} style={{ textDecoration: "none", display: "block" }}>
         <div className="poster-wrap">
           <Image
             src={src}

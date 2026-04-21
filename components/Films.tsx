@@ -1,12 +1,20 @@
 import { film } from "@/types";
 import Film from "./Film";
 
-export default function Films({ films, loading }: { films: film[]; loading?: boolean }) {
+export default function Films({
+  films,
+  loading,
+  mediaType = "film",
+}: {
+  films: film[];
+  loading?: boolean;
+  mediaType?: "film" | "series";
+}) {
   if (!films.length) {
     if (loading) return null;
     return (
       <p className="empty">
-        No se encontraron películas
+        No se encontraron resultados
         <style jsx>{`
           .empty {
             color: #8888aa;
@@ -22,7 +30,7 @@ export default function Films({ films, loading }: { films: film[]; loading?: boo
   return (
     <section className="grid">
       {films.map((film: film) => (
-        <Film key={film.id} film={film} />
+        <Film key={film.id} film={film} mediaType={mediaType} />
       ))}
       <style jsx>{`
         .grid {

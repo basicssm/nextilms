@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import NavBar from "@/components/NavBar";
-import NavUserMenu from "@/components/NavUserMenu";
+import Back from "@/components/Back";
 import { useAuth } from "@/context/AuthContext";
 import { useFullWatchlist } from "@/hooks/useWatchlist";
 import { WatchlistItem, WatchlistStatus } from "@/types";
@@ -75,6 +75,7 @@ function FilmCard({
       <style jsx>{`
         .card {
           width: 120px;
+          flex-shrink: 0;
           display: flex;
           flex-direction: column;
           gap: 8px;
@@ -212,12 +213,28 @@ function Section({
           gap: 20px;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 768px) {
           .section {
             margin-bottom: 36px;
           }
           .section-grid {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 12px;
             gap: 14px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
+          }
+          .section-grid::-webkit-scrollbar {
+            height: 4px;
+          }
+          .section-grid::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .section-grid::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 2px;
           }
         }
       `}</style>
@@ -273,7 +290,7 @@ export default function MyListPage() {
   return (
     <>
       <NavBar>
-        <NavUserMenu />
+        <Back />
       </NavBar>
 
       <div className="page">

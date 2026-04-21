@@ -15,6 +15,21 @@ export type filmDetail = film & {
   release_date?: string;
 };
 
+export type seriesDetail = {
+  id: string;
+  title: string;
+  poster_path: string;
+  overview: string;
+  vote_average: number;
+  vote_count: number;
+  backdrop_path?: string;
+  genres?: { id: number; name: string }[];
+  first_air_date?: string;
+  number_of_seasons?: number;
+  number_of_episodes?: number;
+  episode_run_time?: number[];
+};
+
 export type WatchlistStatus = "watching" | "to_watch" | "watched";
 
 export type WatchlistItem = {
