@@ -25,7 +25,7 @@ export default function Search() {
       <div className="search">
         <input
           type="text"
-          placeholder="Buscar películas..."
+          placeholder="Buscar..."
           value={searchText}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
         />
@@ -57,7 +57,7 @@ export default function Search() {
           outline: none;
           color: #e8e8f2;
           font-size: 13px;
-          width: 160px;
+          width: 150px;
         }
         input::placeholder {
           color: rgba(255, 255, 255, 0.28);
@@ -77,9 +77,18 @@ export default function Search() {
           color: #d4af37;
         }
         button :global(svg) {
-          width: 15px;
-          height: 15px;
+          width: 14px;
+          height: 14px;
           fill: currentColor;
+        }
+
+        @media (max-width: 480px) {
+          .search {
+            padding: 7px 10px;
+          }
+          input {
+            width: 100px;
+          }
         }
       `}</style>
     </>

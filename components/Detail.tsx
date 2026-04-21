@@ -110,7 +110,9 @@ export default function Detail({
           <h2 className="videos-title">Videos</h2>
           <div className="videos-grid">
             {videos.map(({ key }) => (
-              <YouTube key={key} videoId={key} opts={opts} />
+              <div key={key} className="video-wrap">
+                <YouTube videoId={key} opts={opts} />
+              </div>
             ))}
           </div>
         </div>
@@ -218,6 +220,7 @@ export default function Detail({
           font-size: 15px;
           line-height: 1.75;
           max-width: 580px;
+          margin-bottom: 4px;
         }
 
         .videos-section {
@@ -239,6 +242,7 @@ export default function Detail({
           gap: 16px;
         }
 
+        /* ── Mobile ─────────────────────────────────────── */
         @media (max-width: 768px) {
           .backdrop {
             height: 260px;
@@ -254,14 +258,64 @@ export default function Detail({
 
           .info-col {
             padding-top: 0;
+            width: 100%;
           }
 
           .title {
             font-size: 1.5rem;
+            text-align: center;
+          }
+
+          .meta {
+            justify-content: center;
+          }
+
+          .genres {
+            justify-content: center;
+          }
+
+          .overview {
+            max-width: 100%;
+            font-size: 14px;
           }
 
           .videos-section {
-            padding: 0 20px 40px;
+            padding: 0 16px 40px;
+          }
+
+          /* Horizontal scroll row for videos on mobile */
+          .videos-grid {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
+            gap: 12px;
+          }
+
+          .video-wrap {
+            flex-shrink: 0;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .backdrop {
+            height: 220px;
+          }
+
+          .content {
+            margin-top: -40px;
+            padding: 0 14px 32px;
+          }
+
+          :global(.poster-img) {
+            width: 160px !important;
+            height: 240px !important;
+          }
+
+          .title {
+            font-size: 1.3rem;
           }
         }
       `}</style>

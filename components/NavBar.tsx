@@ -34,15 +34,26 @@ export default function NavBar({ children }: { children: ReactNode }) {
         .nav-right {
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 12px;
+          min-width: 0;
         }
         :global(.logo-link) {
           opacity: 0.85;
           transition: opacity 0.2s;
           display: block;
+          flex-shrink: 0;
         }
         :global(.logo-link:hover) {
           opacity: 1;
+        }
+
+        @media (max-width: 480px) {
+          .nav {
+            padding: 10px 12px;
+          }
+          .nav-right {
+            gap: 8px;
+          }
         }
       `}</style>
     </header>

@@ -36,19 +36,22 @@ export default function NavUserMenu() {
 
       <style jsx>{`
         .placeholder {
-          width: 100px;
+          width: 80px;
+          flex-shrink: 0;
         }
         .user-menu {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
+          flex-shrink: 0;
         }
         :global(.my-list-link) {
           color: #a8a8c0;
           font-size: 14px;
           text-decoration: none;
-          padding: 6px 12px;
+          padding: 6px 10px;
           border-radius: 6px;
+          white-space: nowrap;
           transition: color 0.15s, background 0.15s;
         }
         :global(.my-list-link:hover) {
@@ -60,9 +63,10 @@ export default function NavUserMenu() {
           border: 1px solid rgba(212, 175, 55, 0.25);
           color: #8888aa;
           font-size: 13px;
-          padding: 6px 14px;
+          padding: 6px 12px;
           border-radius: 6px;
           cursor: pointer;
+          white-space: nowrap;
           transition: all 0.15s;
         }
         .sign-out-btn:hover {
@@ -75,14 +79,36 @@ export default function NavUserMenu() {
           color: #d4af37;
           font-size: 13px;
           font-weight: 600;
-          padding: 7px 16px;
+          padding: 7px 14px;
           border-radius: 6px;
           cursor: pointer;
+          white-space: nowrap;
           transition: all 0.15s;
         }
         .sign-in-btn:hover {
           background: rgba(212, 175, 55, 0.18);
           border-color: rgba(212, 175, 55, 0.55);
+        }
+
+        @media (max-width: 480px) {
+          .placeholder {
+            width: 60px;
+          }
+          .user-menu {
+            gap: 6px;
+          }
+          :global(.my-list-link) {
+            font-size: 12px;
+            padding: 5px 8px;
+          }
+          .sign-out-btn {
+            font-size: 12px;
+            padding: 5px 10px;
+          }
+          .sign-in-btn {
+            font-size: 12px;
+            padding: 6px 10px;
+          }
         }
       `}</style>
     </>

@@ -89,8 +89,10 @@ export default function WatchlistButtons({
         .wl-btn {
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 7px;
-          padding: 9px 18px;
+          padding: 10px 18px;
+          min-height: 44px;
           border-radius: 8px;
           border: 1px solid rgba(212, 175, 55, 0.22);
           background: rgba(212, 175, 55, 0.06);
@@ -120,6 +122,21 @@ export default function WatchlistButtons({
         }
         .wl-label {
           font-size: 13px;
+        }
+
+        @media (max-width: 480px) {
+          .watchlist-btns {
+            gap: 8px;
+            flex-wrap: nowrap;
+          }
+          .wl-btn {
+            flex: 1;
+            padding: 10px 6px;
+            font-size: 13px;
+          }
+          .wl-label {
+            font-size: 11px;
+          }
         }
       `}</style>
     </>
