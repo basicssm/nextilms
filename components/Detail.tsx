@@ -7,7 +7,7 @@ import { filmDetail } from "@/types";
 const opts = {
   height: "195",
   width: "320",
-  playerVars: { autoplay: 0, rel: 0 },
+  playerVars: { autoplay: 0 as const, rel: 0 as const },
 };
 
 type VideoResult = { key: string; name?: string };
