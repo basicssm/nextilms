@@ -1,9 +1,33 @@
-body,
-html {
+:root {
+  --bg: #080810;
+  --surface: #12121e;
+  --surface-elevated: #1c1c2e;
+  --text: #e8e8f2;
+  --text-muted: #8888aa;
+  --gold: #d4af37;
+  --border: rgba(212, 175, 55, 0.12);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body {
-  background-color: #ddd;
+body, html {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-elevated);
+  border-radius: 3px;
 }

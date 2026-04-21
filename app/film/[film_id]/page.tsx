@@ -1,6 +1,5 @@
 "use client";
 
-import Head from "next/head";
 import useSWR from "swr";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
 import NavBar from "@/components/NavBar";
@@ -25,21 +24,54 @@ export default function DetailPage({
     fetcher
   );
 
-  if (error) return <div>failed to load</div>;
-  if (!data) return <div>loading...</div>;
+  if (error)
+    return (
+      <>
+        <NavBar>
+          <Back />
+        </NavBar>
+        <p style={{ color: "#8888aa", textAlign: "center", padding: "80px 20px" }}>
+          Error al cargar la película
+        </p>
+      </>
+    );
+
+  if (!data)
+    return (
+      <>
+        <NavBar>
+          <Back />
+        </NavBar>
+        <div style={{ display: "flex", justifyContent: "center", padding: "80px 20px" }}>
+          <span className="spinner" />
+          <style jsx>{`
+            .spinner {
+              display: inline-block;
+              width: 36px;
+              height: 36px;
+              border: 3px solid rgba(212, 175, 55, 0.18);
+              border-top-color: #d4af37;
+              border-radius: 50%;
+              animation: spin 0.8s linear infinite;
+            }
+            @keyframes spin {
+              to {
+                transform: rotate(360deg);
+              }
+            }
+          `}</style>
+        </div>
+      </>
+    );
+
+  const videoList = videoError ? [] : (videoData?.results ?? []);
 
   return (
     <>
-      <Head>
-        <title>Films</title>
-        <meta name="description" content="Films page detail example" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.png" />
-      </Head>
       <NavBar>
         <Back />
       </NavBar>
-      <Detail film={data} videos={videoError ? [] : videoData} />
+      <Detail film={data} videos={videoList} />
     </>
   );
 }

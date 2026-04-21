@@ -8,26 +8,29 @@ export default function Back() {
 
   return (
     <>
-      <div onClick={() => router.back()}>
+      <button className="back-btn" onClick={() => router.back()}>
         <FontAwesomeIcon icon={faArrowLeft} />
         <span>Volver</span>
-      </div>
-      <style jsx>
-        {`
-          div {
-            cursor: pointer;
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            width: 70px;
-            padding-right: 20px;
-          }
-
-          span {
-            line-heigth: 16px;
-          }
-        `}
-      </style>
+      </button>
+      <style jsx>{`
+        .back-btn {
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: none;
+          border: 1px solid rgba(212, 175, 55, 0.25);
+          color: #d4af37;
+          padding: 6px 14px;
+          border-radius: 5px;
+          font-size: 13px;
+          transition: background 0.2s, border-color 0.2s;
+        }
+        .back-btn:hover {
+          background: rgba(212, 175, 55, 0.1);
+          border-color: rgba(212, 175, 55, 0.55);
+        }
+      `}</style>
     </>
   );
 }
