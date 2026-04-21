@@ -4,11 +4,26 @@ import { film as filmType } from "@/types";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w342";
 const FALLBACK = "https://picsum.photos/id/444/200/300";
+const THEATERS_WINDOW_DAYS = 75;
+
+function getStatusBadge(releaseDate: string | undefined, mediaType: "film" | "series") {
+  if (!releaseDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const release = new Date(releaseDate);
+  if (release > today) return "upcoming";
+  if (mediaType === "film") {
+    const days = (today.getTime() - release.getTime()) / 86400000;
+    if (days <= THEATERS_WINDOW_DAYS) return "theaters";
+  }
+  return null;
+}
 
 export default function Film({ film, mediaType = "film" }: { film: filmType; mediaType?: "film" | "series" }) {
-  const { id, title, poster_path, vote_average } = film;
+  const { id, title, poster_path, vote_average, release_date } = film;
   const src = poster_path ? `${POSTER_BASE}${poster_path}` : FALLBACK;
   const href = mediaType === "series" ? `/series/${id}` : `/film/${id}`;
+  const statusBadge = getStatusBadge(release_date, mediaType);
 
   return (
     <div className="card">
@@ -25,6 +40,12 @@ export default function Film({ film, mediaType = "film" }: { film: filmType; med
           <div className="hover-overlay">
             <p className="title">{title}</p>
           </div>
+          {statusBadge === "upcoming" && (
+            <span className="status-badge upcoming">⏰ Próximamente</span>
+          )}
+          {statusBadge === "theaters" && (
+            <span className="status-badge theaters">🍿 En cines</span>
+          )}
           {vote_average != null && vote_average > 0 && (
             <span className="rating-badge">★ {vote_average.toFixed(1)}</span>
           )}
@@ -131,6 +152,33 @@ export default function Film({ film, mediaType = "film" }: { film: filmType; med
           -webkit-backdrop-filter: blur(6px);
           z-index: 3;
           letter-spacing: 0.02em;
+        }
+
+        .status-badge {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          font-size: 10px;
+          font-weight: 700;
+          padding: 3px 7px;
+          border-radius: 4px;
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          z-index: 3;
+          letter-spacing: 0.01em;
+          white-space: nowrap;
+        }
+
+        .status-badge.upcoming {
+          background: rgba(0, 0, 0, 0.65);
+          color: #b8c8e8;
+          border: 1px solid rgba(184, 200, 232, 0.3);
+        }
+
+        .status-badge.theaters {
+          background: rgba(0, 0, 0, 0.65);
+          color: #f5c842;
+          border: 1px solid rgba(245, 200, 66, 0.35);
         }
       `}</style>
     </div>

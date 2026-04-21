@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import YouTube from "react-youtube";
-import { filmDetail } from "@/types";
+import { filmDetail, WatchProvider } from "@/types";
 import WatchlistButtons from "@/components/WatchlistButtons";
+
+const PROVIDER_LOGO_BASE = "https://image.tmdb.org/t/p/original";
 
 const opts = {
   height: "195",
@@ -37,6 +39,7 @@ export default function Detail({
     vote_count,
     genres,
     runtime,
+    watch_providers,
   } = film;
 
   const poster = poster_path
@@ -111,6 +114,25 @@ export default function Detail({
           ) : null}
 
           {overview && <p className="overview">{overview}</p>}
+
+          {watch_providers && watch_providers.length > 0 && (
+            <div className="platforms">
+              <span className="platforms-label">Disponible en</span>
+              <div className="platforms-logos">
+                {watch_providers.map((p: WatchProvider) => (
+                  <div key={p.provider_id} className="platform-item" title={p.provider_name}>
+                    <Image
+                      src={`${PROVIDER_LOGO_BASE}${p.logo_path}`}
+                      alt={p.provider_name}
+                      width={40}
+                      height={40}
+                      className="platform-logo"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <WatchlistButtons
             filmId={Number(id)}
@@ -235,7 +257,46 @@ export default function Detail({
           font-size: 15px;
           line-height: 1.75;
           max-width: 580px;
-          margin-bottom: 4px;
+          margin-bottom: 20px;
+        }
+
+        .platforms {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin-bottom: 20px;
+        }
+
+        .platforms-label {
+          color: #8888aa;
+          font-size: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+
+        .platforms-logos {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          align-items: center;
+        }
+
+        .platform-item {
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .platform-item:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+        }
+
+        :global(.platform-logo) {
+          display: block;
+          border-radius: 8px;
         }
 
         .videos-section {

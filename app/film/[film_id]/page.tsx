@@ -3,6 +3,7 @@
 import { use } from "react";
 import useSWR from "swr";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
+import { WatchProvider } from "@/types";
 import NavBar from "@/components/NavBar";
 import Back from "@/components/Back";
 import Detail from "@/components/Detail";
@@ -22,6 +23,11 @@ export default function DetailPage({
 
   const { data: videoData, error: videoError } = useSWR(
     `${API_BASE_URL}/movie/${film_id}/videos?api_key=${API_KEY}&language=es-ES`,
+    fetcher
+  );
+
+  const { data: providersData } = useSWR(
+    `${API_BASE_URL}/movie/${film_id}/watch/providers?api_key=${API_KEY}`,
     fetcher
   );
 
@@ -66,13 +72,15 @@ export default function DetailPage({
     );
 
   const videoList = videoError ? [] : (videoData?.results ?? []);
+  const esRegion = providersData?.results?.ES;
+  const watchProviders: WatchProvider[] = esRegion?.flatrate ?? esRegion?.free ?? [];
 
   return (
     <>
       <NavBar>
         <Back />
       </NavBar>
-      <Detail film={data} videos={videoList} />
+      <Detail film={{ ...data, watch_providers: watchProviders }} videos={videoList} />
     </>
   );
 }
