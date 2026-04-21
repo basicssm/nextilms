@@ -1,11 +1,13 @@
 "use client";
 
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
 import { film } from "@/types";
 import NavBar from "@/components/NavBar";
 import Films from "@/components/Films";
-import Search from "@/components/Search";
+import { useRouter } from "next/navigation";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 
 type MediaType = "film" | "series";
 type FilmCategory = "popular" | "upcoming" | "trending";
@@ -61,10 +63,12 @@ export default function Home() {
   const [category, setCategory] = useState<Category>("popular");
   const [films, setFilms] = useState<film[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
   const loadingRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;
@@ -117,11 +121,34 @@ export default function Home() {
     setCategory("popular");
   }
 
+  function handleSearch() {
+    if (searchText.trim()) router.push(`/search/${searchText.trim()}`);
+  }
+
+  function handleSearchKey(e: React.KeyboardEvent) {
+    if (e.key === "Enter") handleSearch();
+  }
+
   return (
     <>
-      <NavBar>
-        <Search />
-      </NavBar>
+      <NavBar />
+
+      <div className="hero">
+        <h1 className="hero-title">whatwatch</h1>
+        <div className="hero-search">
+          <input
+            type="text"
+            placeholder="Buscar películas y series..."
+            value={searchText}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+            onKeyDown={handleSearchKey}
+            autoComplete="off"
+          />
+          <button onClick={handleSearch} aria-label="Buscar">
+            <FontAwesomeIcon icon={faMagnifyingGlass} />
+          </button>
+        </div>
+      </div>
 
       <div className="tabs-bar">
         <div className="media-tabs">
@@ -158,6 +185,81 @@ export default function Home() {
       </div>
 
       <style jsx>{`
+        .hero {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 48px 24px 32px;
+          gap: 20px;
+        }
+
+        .hero-title {
+          font-family: var(--font-bebas), sans-serif;
+          font-size: clamp(64px, 12vw, 120px);
+          font-weight: 400;
+          letter-spacing: 0.06em;
+          color: #c8c8d8;
+          line-height: 1;
+          margin: 0;
+          text-transform: uppercase;
+          user-select: none;
+        }
+
+        .hero-search {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          max-width: 560px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          padding: 12px 16px;
+          gap: 10px;
+          transition: border-color 0.2s, background 0.2s;
+        }
+
+        .hero-search:focus-within {
+          border-color: rgba(255, 255, 255, 0.22);
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        .hero-search input {
+          flex: 1;
+          background: none;
+          border: none;
+          outline: none;
+          color: #e8e8f2;
+          font-size: 16px;
+          min-width: 0;
+        }
+
+        .hero-search input::placeholder {
+          color: rgba(255, 255, 255, 0.25);
+        }
+
+        .hero-search button {
+          background: none;
+          border: none;
+          outline: none;
+          cursor: pointer;
+          color: rgba(255, 255, 255, 0.3);
+          display: flex;
+          align-items: center;
+          padding: 0;
+          transition: color 0.2s;
+          flex-shrink: 0;
+        }
+
+        .hero-search button:hover {
+          color: rgba(255, 255, 255, 0.6);
+        }
+
+        .hero-search button :global(svg) {
+          width: 18px;
+          height: 18px;
+          fill: currentColor;
+        }
+
         .tabs-bar {
           padding: 20px 24px 4px;
           max-width: 1400px;
@@ -239,6 +341,16 @@ export default function Home() {
         }
 
         @media (max-width: 480px) {
+          .hero {
+            padding: 32px 16px 20px;
+            gap: 16px;
+          }
+          .hero-search {
+            padding: 10px 14px;
+          }
+          .hero-search input {
+            font-size: 15px;
+          }
           .tabs-bar {
             padding: 14px 12px 4px;
           }
