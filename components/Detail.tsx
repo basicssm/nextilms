@@ -3,6 +3,7 @@
 import Image from "next/image";
 import YouTube from "react-youtube";
 import { filmDetail } from "@/types";
+import WatchlistButtons from "@/components/WatchlistButtons";
 
 const opts = {
   height: "195",
@@ -20,6 +21,7 @@ export default function Detail({
   videos: VideoResult[];
 }) {
   const {
+    id,
     title,
     poster_path,
     backdrop_path,
@@ -94,6 +96,12 @@ export default function Detail({
           ) : null}
 
           {overview && <p className="overview">{overview}</p>}
+
+          <WatchlistButtons
+            filmId={Number(id)}
+            filmTitle={title}
+            posterPath={poster_path ?? null}
+          />
         </div>
       </div>
 
