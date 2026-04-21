@@ -13,12 +13,19 @@ const opts = {
 
 type VideoResult = { key: string; name?: string };
 
+type SeriesInfo = {
+  seasons?: number;
+  episodes?: number;
+};
+
 export default function Detail({
   film,
   videos,
+  seriesInfo,
 }: {
   film: filmDetail;
   videos: VideoResult[];
+  seriesInfo?: SeriesInfo;
 }) {
   const {
     id,
@@ -77,6 +84,14 @@ export default function Detail({
 
           <div className="meta">
             {runtimeStr && <span className="meta-chip">{runtimeStr}</span>}
+            {seriesInfo?.seasons != null && (
+              <span className="meta-chip">
+                {seriesInfo.seasons} {seriesInfo.seasons === 1 ? "temporada" : "temporadas"}
+              </span>
+            )}
+            {seriesInfo?.episodes != null && (
+              <span className="meta-chip">{seriesInfo.episodes} episodios</span>
+            )}
             {vote_average > 0 && (
               <span className="rating">★ {vote_average.toFixed(1)}</span>
             )}

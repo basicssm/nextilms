@@ -9,12 +9,36 @@ import Films from "@/components/Films";
 import Search from "@/components/Search";
 import Back from "@/components/Back";
 
+type MediaType = "film" | "series";
+
+function buildSearchUrl(mediaType: MediaType, query: string, page: number): string {
+  const auth = `api_key=${API_KEY}&language=es-ES`;
+  const endpoint = mediaType === "series" ? "tv" : "movie";
+  return `${API_BASE_URL}/search/${endpoint}?${auth}&query=${encodeURIComponent(query)}&page=${page}&include_adult=false`;
+}
+
+function normalizeItem(item: {
+  id: string;
+  title?: string;
+  name?: string;
+  poster_path: string;
+  vote_average: number;
+}): film {
+  return {
+    id: item.id,
+    title: item.title ?? item.name ?? "",
+    poster_path: item.poster_path,
+    vote_average: item.vote_average,
+  };
+}
+
 export default function SearchPage({
   params,
 }: {
   params: Promise<{ search_param: string }>;
 }) {
   const { search_param } = use(params);
+  const [mediaType, setMediaType] = useState<MediaType>("film");
   const [films, setFilms] = useState<film[]>([]);
   const [loading, setLoading] = useState(true);
   const pageRef = useRef(1);
@@ -27,22 +51,11 @@ export default function SearchPage({
     loadingRef.current = true;
     setLoading(true);
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/search/movie?api_key=${API_KEY}&language=es-ES&query=${search_param}&page=${pageRef.current}&include_adult=false`
-      );
+      const url = buildSearchUrl(mediaType, search_param, pageRef.current);
+      const res = await fetch(url);
       const data = await res.json();
       if (data.results) {
-        setFilms((prev) => [
-          ...prev,
-          ...data.results.map(
-            ({ id, title, poster_path, vote_average }: film & { vote_average: number }) => ({
-              id,
-              title,
-              poster_path,
-              vote_average,
-            })
-          ),
-        ]);
+        setFilms((prev) => [...prev, ...data.results.map(normalizeItem)]);
         hasMoreRef.current = pageRef.current < (data.total_pages ?? 1);
         pageRef.current += 1;
       }
@@ -51,16 +64,15 @@ export default function SearchPage({
     }
     loadingRef.current = false;
     setLoading(false);
-  }, [search_param]);
+  }, [search_param, mediaType]);
 
-  // Reset state when search query changes (runs before loadMore effect)
   useEffect(() => {
     setFilms([]);
     setLoading(true);
     pageRef.current = 1;
     hasMoreRef.current = true;
     loadingRef.current = false;
-  }, [search_param]);
+  }, [search_param, mediaType]);
 
   useEffect(() => {
     loadMore();
@@ -86,22 +98,69 @@ export default function SearchPage({
           <Search />
         </div>
       </NavBar>
-      <Films films={films} loading={loading} />
+
+      <div className="search-tabs">
+        <button
+          className={`stab${mediaType === "film" ? " active" : ""}`}
+          onClick={() => setMediaType("film")}
+        >
+          Películas
+        </button>
+        <button
+          className={`stab${mediaType === "series" ? " active" : ""}`}
+          onClick={() => setMediaType("series")}
+        >
+          Series
+        </button>
+      </div>
+
+      <Films films={films} loading={loading} mediaType={mediaType} />
+
       <div ref={sentinelRef} className="sentinel">
         {loading && <span className="spinner" />}
       </div>
+
       <style jsx>{`
         .search-nav {
           display: flex;
           align-items: center;
           gap: 12px;
         }
+
+        .search-tabs {
+          display: flex;
+          gap: 4px;
+          padding: 16px 24px 0;
+          max-width: 1400px;
+          margin: 0 auto;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .stab {
+          background: none;
+          border: none;
+          border-bottom: 2px solid transparent;
+          color: #8888aa;
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+          padding: 5px 16px 10px;
+          margin-bottom: -1px;
+          transition: color 0.18s, border-color 0.18s;
+        }
+
+        .stab.active {
+          color: #f0f0f8;
+          border-bottom-color: #d4af37;
+        }
+
         .sentinel {
           height: 72px;
           display: flex;
           align-items: center;
           justify-content: center;
         }
+
         .spinner {
           display: inline-block;
           width: 28px;
@@ -111,9 +170,16 @@ export default function SearchPage({
           border-radius: 50%;
           animation: spin 0.8s linear infinite;
         }
+
         @keyframes spin {
           to {
             transform: rotate(360deg);
+          }
+        }
+
+        @media (max-width: 480px) {
+          .search-tabs {
+            padding: 12px 12px 0;
           }
         }
       `}</style>
