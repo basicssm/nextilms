@@ -44,12 +44,15 @@ function normalizeItem(item: {
   name?: string;
   poster_path: string;
   vote_average: number;
+  release_date?: string;
+  first_air_date?: string;
 }): film {
   return {
     id: item.id,
     title: item.title ?? item.name ?? "",
     poster_path: item.poster_path,
     vote_average: item.vote_average,
+    release_date: item.release_date ?? item.first_air_date,
   };
 }
 

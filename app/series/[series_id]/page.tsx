@@ -6,7 +6,7 @@ import { API_KEY, API_BASE_URL } from "@/apiconfig";
 import NavBar from "@/components/NavBar";
 import Back from "@/components/Back";
 import Detail from "@/components/Detail";
-import { filmDetail } from "@/types";
+import { filmDetail, WatchProvider } from "@/types";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -24,6 +24,11 @@ export default function SeriesDetailPage({
 
   const { data: videoData, error: videoError } = useSWR(
     `${API_BASE_URL}/tv/${series_id}/videos?api_key=${API_KEY}&language=es-ES`,
+    fetcher
+  );
+
+  const { data: providersData } = useSWR(
+    `${API_BASE_URL}/tv/${series_id}/watch/providers?api_key=${API_KEY}`,
     fetcher
   );
 
@@ -67,6 +72,9 @@ export default function SeriesDetailPage({
       </>
     );
 
+  const esRegion = providersData?.results?.ES;
+  const watchProviders: WatchProvider[] = esRegion?.flatrate ?? esRegion?.free ?? [];
+
   const normalized: filmDetail = {
     id: data.id,
     title: data.name,
@@ -78,6 +86,7 @@ export default function SeriesDetailPage({
     genres: data.genres,
     runtime: data.episode_run_time?.[0],
     release_date: data.first_air_date,
+    watch_providers: watchProviders,
   };
 
   const seriesInfo = {

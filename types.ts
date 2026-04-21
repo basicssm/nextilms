@@ -3,6 +3,13 @@ export type film = {
   title: string;
   poster_path: string;
   vote_average?: number;
+  release_date?: string;
+};
+
+export type WatchProvider = {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
 };
 
 export type filmDetail = film & {
@@ -13,6 +20,7 @@ export type filmDetail = film & {
   genres?: { id: number; name: string }[];
   runtime?: number;
   release_date?: string;
+  watch_providers?: WatchProvider[];
 };
 
 export type seriesDetail = {
