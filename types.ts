@@ -14,3 +14,16 @@ export type filmDetail = film & {
   runtime?: number;
   release_date?: string;
 };
+
+export type WatchlistStatus = "watching" | "to_watch" | "watched";
+
+export type WatchlistItem = {
+  id: string;
+  user_id: string;
+  film_id: number;
+  film_title: string;
+  poster_path: string | null;
+  status: WatchlistStatus;
+  created_at: string;
+  updated_at: string;
+};

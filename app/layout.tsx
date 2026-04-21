@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import "@fortawesome/fontawesome-svg-core/styles.css";
+import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: "Films",
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head />
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
