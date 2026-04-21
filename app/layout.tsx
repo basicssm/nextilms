@@ -1,7 +1,15 @@
 import type { Metadata, Viewport } from "next";
+import { Bebas_Neue } from "next/font/google";
 import "@/styles/globals.css";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import Providers from "@/components/Providers";
+
+const bebasNeue = Bebas_Neue({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-bebas",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Films",
@@ -21,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" className={bebasNeue.variable}>
       <head />
       <body>
         <Providers>{children}</Providers>
