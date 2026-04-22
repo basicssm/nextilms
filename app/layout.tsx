@@ -1,19 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { Bebas_Neue } from "next/font/google";
+import { Syne, Inter, JetBrains_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import Providers from "@/components/Providers";
 
-const bebasNeue = Bebas_Neue({
-  weight: "400",
+const syne = Syne({
   subsets: ["latin"],
-  variable: "--font-bebas",
+  variable: "--font-syne",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Films",
-  description: "Descubre películas populares",
+  title: "WhatWatch — Deja de buscar. Empieza a ver.",
+  description: "Descubre y organiza tus películas y series favoritas",
   icons: { icon: "/favicon.png" },
 };
 
@@ -29,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={bebasNeue.variable}>
+    <html lang="es" className={`${syne.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <head />
       <body>
         <Providers>{children}</Providers>
