@@ -113,7 +113,11 @@ export default function Detail({
             </div>
           ) : null}
 
-          {overview && <p className="overview">{overview}</p>}
+          <WatchlistButtons
+            filmId={Number(id)}
+            filmTitle={title}
+            posterPath={poster_path ?? null}
+          />
 
           {watch_providers && watch_providers.length > 0 && (
             <div className="platforms">
@@ -134,11 +138,7 @@ export default function Detail({
             </div>
           )}
 
-          <WatchlistButtons
-            filmId={Number(id)}
-            filmTitle={title}
-            posterPath={poster_path ?? null}
-          />
+          {overview && <p className="overview">{overview}</p>}
         </div>
       </div>
 
@@ -257,6 +257,7 @@ export default function Detail({
           font-size: 15px;
           line-height: 1.75;
           max-width: 580px;
+          margin-top: 20px;
           margin-bottom: 20px;
         }
 
