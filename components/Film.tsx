@@ -58,9 +58,6 @@ export default function Film({
           {/* Hover overlay: título + rating */}
           <div className="hover-overlay">
             <p className="title">{title}</p>
-            {vote_average != null && vote_average > 0 && (
-              <p className="rating-inline">★ {vote_average.toFixed(1)}</p>
-            )}
           </div>
 
           {/* Badges superiores izquierda */}
@@ -172,13 +169,6 @@ export default function Film({
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
-        }
-
-        .rating-inline {
-          font-family: var(--font-mono);
-          font-size: 11px;
-          color: var(--accent);
-          font-weight: 500;
         }
 
         /* Rating badge — siempre visible */
