@@ -246,29 +246,27 @@ export default function PlatformsPage() {
           gap: 10px;
           padding: 18px 8px 14px;
           background: var(--surface);
-          border: 2px solid transparent;
+          border: 2px solid rgba(255, 255, 255, 0.06);
           border-radius: var(--radius-md);
           cursor: pointer;
-          transition: transform 0.18s ease, box-shadow 0.18s ease;
+          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
           text-align: center;
         }
 
         .card:hover:not(.disabled) {
+          border-color: rgba(255, 255, 255, 0.14);
           transform: translateY(-2px);
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
         }
 
         .card.selected {
-          background-image:
-            linear-gradient(var(--surface), var(--surface)),
-            linear-gradient(135deg, #6c63ff 0%, #ff6584 100%);
-          background-origin: border-box;
-          background-clip: padding-box, border-box;
-          box-shadow: 0 0 20px rgba(108, 99, 255, 0.15);
+          border-color: rgba(108, 99, 255, 0.7);
+          box-shadow: 0 0 20px rgba(108, 99, 255, 0.18);
         }
 
         .card.selected:hover {
-          box-shadow: 0 6px 28px rgba(108, 99, 255, 0.25);
+          border-color: #6c63ff;
+          box-shadow: 0 6px 28px rgba(108, 99, 255, 0.28);
           transform: translateY(-2px);
         }
 
@@ -310,10 +308,7 @@ export default function PlatformsPage() {
         }
 
         .card.selected .name {
-          background: linear-gradient(135deg, #6c63ff 0%, #ff6584 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          color: #a09af8;
           font-weight: 600;
         }
 
