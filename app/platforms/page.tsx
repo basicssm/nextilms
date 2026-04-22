@@ -9,7 +9,21 @@ import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
 
 const LOGO_BASE = "https://image.tmdb.org/t/p/original";
-const POPULAR_COUNT = 10;
+
+// Featured platform names (partial match, case-insensitive)
+const FEATURED_NAMES = [
+  "netflix",
+  "disney plus",
+  "disney+",
+  "hbo max",
+  "apple tv",
+  "hulu",
+  "movistar",
+  "atresplayer",
+  "rtve",
+  "showtime",
+  "skytime",
+];
 
 type TmdbProvider = {
   provider_id: number;
@@ -18,12 +32,18 @@ type TmdbProvider = {
   display_priority: number;
 };
 
+function isFeatured(name: string) {
+  const lower = name.toLowerCase();
+  return FEATURED_NAMES.some((f) => lower.includes(f));
+}
+
 export default function PlatformsPage() {
   const { user, loading: authLoading } = useAuth();
   const { platformIds, toggle, loading: platformsLoading } = useUserPlatforms();
   const [providers, setProviders] = useState<TmdbProvider[]>([]);
   const [fetching, setFetching] = useState(true);
   const [toggling, setToggling] = useState<Set<number>>(new Set());
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     async function loadProviders() {
@@ -68,16 +88,16 @@ export default function PlatformsPage() {
   }
 
   const isLoading = fetching || authLoading || platformsLoading;
-  const popularProviders = providers.slice(0, POPULAR_COUNT);
-  const otherProviders = providers.slice(POPULAR_COUNT);
+  const featured = providers.filter((p) => isFeatured(p.provider_name));
+  const others = providers.filter((p) => !isFeatured(p.provider_name));
+  const selectedCount = platformIds.size;
 
-  function ProviderCard({ p }: { p: TmdbProvider }) {
+  function ProviderCard({ p, large }: { p: TmdbProvider; large?: boolean }) {
     const selected = platformIds.has(p.provider_id);
     const busy = toggling.has(p.provider_id);
     return (
       <button
-        key={p.provider_id}
-        className={`card${selected ? " selected" : ""}${!user ? " disabled" : ""}`}
+        className={`card${large ? " card-large" : ""}${selected ? " selected" : ""}${!user ? " disabled" : ""}${busy ? " busy" : ""}`}
         onClick={() => handleToggle(p)}
         disabled={!user || busy}
         title={user ? p.provider_name : "Inicia sesión para seleccionar"}
@@ -90,12 +110,13 @@ export default function PlatformsPage() {
             fill
             style={{ objectFit: "cover" }}
           />
+          {busy && <div className="busy-overlay"><span className="spin" /></div>}
         </div>
-        <span className="name">{p.provider_name}</span>
+        <span className="card-name">{p.provider_name}</span>
         {selected && (
-          <span className="check" aria-hidden>
-            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-              <path d="M1 3.5L3.8 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <span className="badge" aria-hidden>
+            <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+              <path d="M1 3L3.5 5.5L8 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
         )}
@@ -110,121 +131,412 @@ export default function PlatformsPage() {
       </NavBar>
 
       <main>
-        <div className="header">
-          <h1>Mis plataformas</h1>
-          <p className="subtitle">
-            Selecciona las plataformas de streaming que tienes contratadas.
-            Podrás filtrar el contenido disponible en ellas.
-          </p>
-        </div>
-
-        {!user && !authLoading && (
-          <div className="auth-prompt">
-            <span className="auth-icon">🔒</span>
-            <p>Inicia sesión para guardar tus plataformas</p>
-          </div>
-        )}
-
-        {isLoading && (
-          <div className="loading-wrap">
-            <span className="spinner" />
-          </div>
-        )}
-
-        {!isLoading && providers.length > 0 && (
-          <>
-            {platformIds.size > 0 && (
-              <p className="selected-count">
-                {platformIds.size} {platformIds.size === 1 ? "plataforma seleccionada" : "plataformas seleccionadas"}
-              </p>
+        {/* ── Hero ── */}
+        <section className="hero">
+          <div className="hero-inner">
+            <div className="hero-text">
+              <h1>Mis plataformas</h1>
+              <p>Elige las plataformas que tienes contratadas y filtra el contenido disponible para ti.</p>
+            </div>
+            {selectedCount > 0 && (
+              <div className="counter-pill">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1L8.8 5.2L13.5 5.6L10.1 8.5L11.1 13L7 10.5L2.9 13L3.9 8.5L0.5 5.6L5.2 5.2L7 1Z" fill="currentColor" />
+                </svg>
+                <span>{selectedCount} {selectedCount === 1 ? "seleccionada" : "seleccionadas"}</span>
+              </div>
             )}
+          </div>
+        </section>
 
+        {/* ── Auth notice ── */}
+        {!user && !authLoading && (
+          <div className="notice">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="3" y="7" width="10" height="8" rx="2" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            Inicia sesión para guardar tus plataformas
+          </div>
+        )}
+
+        {/* ── Loading ── */}
+        {isLoading && (
+          <div className="loading-area">
+            <div className="skeleton-grid">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div key={i} className="skeleton" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Content ── */}
+        {!isLoading && providers.length > 0 && (
+          <div className="content">
+            {/* Featured */}
             <section className="section">
-              <h2 className="section-title">Populares en España</h2>
-              <div className="grid">
-                {popularProviders.map((p) => <ProviderCard key={p.provider_id} p={p} />)}
+              <div className="section-header">
+                <h2>Plataformas principales</h2>
+                <span className="section-pill">{featured.length}</span>
+              </div>
+              <div className="grid grid-featured">
+                {featured.map((p) => (
+                  <ProviderCard key={p.provider_id} p={p} large />
+                ))}
               </div>
             </section>
 
-            {otherProviders.length > 0 && (
+            {/* More */}
+            {others.length > 0 && (
               <section className="section">
-                <h2 className="section-title">Todas las plataformas</h2>
-                <div className="grid">
-                  {otherProviders.map((p) => <ProviderCard key={p.provider_id} p={p} />)}
-                </div>
+                <button
+                  className="show-more-btn"
+                  onClick={() => setShowAll((v) => !v)}
+                  aria-expanded={showAll}
+                >
+                  <span>{showAll ? "Mostrar menos" : `Mostrar más (${others.length})`}</span>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    style={{ transform: showAll ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s" }}
+                  >
+                    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+
+                {showAll && (
+                  <div className="grid grid-others">
+                    {others.map((p) => (
+                      <ProviderCard key={p.provider_id} p={p} />
+                    ))}
+                  </div>
+                )}
               </section>
             )}
-          </>
+          </div>
         )}
       </main>
 
       <style jsx>{`
         main {
+          min-height: 100vh;
+          padding-bottom: 80px;
+        }
+
+        /* ── Hero ── */
+        .hero {
+          background: linear-gradient(160deg, rgba(108, 99, 255, 0.12) 0%, rgba(255, 101, 132, 0.06) 60%, transparent 100%);
+          border-bottom: 1px solid var(--border);
+          padding: 48px 24px 40px;
+        }
+
+        .hero-inner {
           max-width: 960px;
           margin: 0 auto;
-          padding: 32px 24px 64px;
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 24px;
+          flex-wrap: wrap;
         }
 
-        .grid {
+        .hero-text h1 {
+          font-family: var(--font-display);
+          font-size: clamp(2rem, 5vw, 3rem);
+          font-weight: 800;
+          background: var(--accent-gradient);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          line-height: 1.1;
+          margin-bottom: 10px;
+        }
+
+        .hero-text p {
+          color: var(--text-muted);
+          font-size: 0.95rem;
+          max-width: 440px;
+          line-height: 1.6;
+        }
+
+        .counter-pill {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          background: rgba(108, 99, 255, 0.15);
+          border: 1px solid rgba(108, 99, 255, 0.35);
+          color: var(--accent);
+          padding: 8px 16px;
+          border-radius: 100px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        /* ── Auth notice ── */
+        .notice {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          max-width: 960px;
+          margin: 20px auto 0;
+          padding: 14px 20px;
+          background: rgba(255, 159, 67, 0.08);
+          border: 1px solid rgba(255, 159, 67, 0.25);
+          border-radius: var(--radius-md);
+          color: #ff9f43;
+          font-size: 0.88rem;
+        }
+
+        /* ── Loading ── */
+        .loading-area {
+          max-width: 960px;
+          margin: 40px auto;
+          padding: 0 24px;
+        }
+
+        .skeleton-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-          gap: 12px;
-          margin-bottom: 40px;
+          grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+          gap: 16px;
         }
 
+        .skeleton {
+          aspect-ratio: 1;
+          border-radius: var(--radius-md);
+          background: linear-gradient(90deg, var(--surface) 25%, var(--surface-hover) 50%, var(--surface) 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+
+        /* ── Content ── */
+        .content {
+          max-width: 960px;
+          margin: 0 auto;
+          padding: 40px 24px 0;
+        }
+
+        .section {
+          margin-bottom: 48px;
+        }
+
+        .section-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+          font-family: var(--font-display);
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: var(--text);
+          letter-spacing: 0.01em;
+        }
+
+        .section-pill {
+          background: var(--surface-elevated);
+          color: var(--text-muted);
+          font-size: 0.75rem;
+          font-weight: 600;
+          padding: 2px 8px;
+          border-radius: 100px;
+          border: 1px solid var(--border);
+        }
+
+        /* ── Grids ── */
+        .grid-featured {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+          gap: 16px;
+        }
+
+        .grid-others {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          gap: 12px;
+          margin-top: 20px;
+          animation: fadeDown 0.3s ease;
+        }
+
+        @keyframes fadeDown {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Cards ── */
         .card {
           position: relative;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 8px;
-          padding: 10px 8px 12px;
+          gap: 10px;
+          padding: 14px 10px 14px;
           background: var(--surface);
-          border: 2px solid transparent;
-          border-radius: 12px;
+          border: 1.5px solid var(--border);
+          border-radius: var(--radius-md);
           cursor: pointer;
           text-align: center;
+          transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
+        }
+
+        .card:hover:not(.disabled) {
+          border-color: var(--border-hover);
+          background: var(--surface-hover);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-large {
+          padding: 18px 12px 16px;
         }
 
         .card.selected {
-          border-color: var(--gold);
+          border-color: var(--accent);
+          background: rgba(108, 99, 255, 0.08);
+          box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.2), 0 8px 24px rgba(108, 99, 255, 0.15);
+        }
+
+        .card.selected:hover:not(.disabled) {
+          box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.35), 0 12px 32px rgba(108, 99, 255, 0.2);
         }
 
         .card.disabled {
-          opacity: 0.45;
-          cursor: default;
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .card.busy {
+          pointer-events: none;
         }
 
         .logo-wrap {
           position: relative;
           width: 100%;
           aspect-ratio: 1;
-          border-radius: 8px;
+          border-radius: 10px;
           overflow: hidden;
+          background: #000;
         }
 
-        .name {
-          font-size: 11px;
+        .card-large .logo-wrap {
+          border-radius: 12px;
+        }
+
+        .busy-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.55);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .spin {
+          width: 18px;
+          height: 18px;
+          border: 2px solid rgba(255,255,255,0.2);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: rotate 0.7s linear infinite;
+        }
+
+        @keyframes rotate {
+          to { transform: rotate(360deg); }
+        }
+
+        .card-name {
+          font-size: 10px;
           color: var(--text-muted);
           line-height: 1.3;
           word-break: break-word;
+          transition: color 0.2s;
         }
 
-        .card.selected .name {
-          color: var(--gold);
+        .card-large .card-name {
+          font-size: 11px;
         }
 
-        .check {
+        .card.selected .card-name {
+          color: var(--accent);
+          font-weight: 600;
+        }
+
+        .badge {
           position: absolute;
-          top: 6px;
-          right: 6px;
+          top: 8px;
+          right: 8px;
           width: 20px;
           height: 20px;
-          background: var(--gold);
+          background: var(--accent);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
+          box-shadow: 0 2px 8px rgba(108, 99, 255, 0.5);
+        }
+
+        /* ── Show more ── */
+        .show-more-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: var(--surface);
+          border: 1.5px solid var(--border);
+          border-radius: var(--radius-md);
+          color: var(--text-muted);
+          padding: 12px 20px;
+          font-size: 0.88rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: border-color 0.2s, color 0.2s, background 0.2s;
+          width: 100%;
+          justify-content: center;
+        }
+
+        .show-more-btn:hover {
+          border-color: var(--border-hover);
+          color: var(--text);
+          background: var(--surface-hover);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+          .hero {
+            padding: 36px 16px 32px;
+          }
+
+          .content {
+            padding: 28px 16px 0;
+          }
+
+          .grid-featured {
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+          }
+
+          .grid-others {
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+          }
+
+          .hero-text h1 {
+            font-size: 1.8rem;
+          }
+
+          .notice {
+            margin: 16px 16px 0;
+          }
         }
       `}</style>
     </>
