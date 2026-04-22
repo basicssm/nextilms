@@ -48,6 +48,13 @@ export default function NavUserMenu() {
                 >
                   Mi lista
                 </Link>
+                <Link
+                  href="/platforms"
+                  className="menu-item"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Mis plataformas
+                </Link>
                 <button
                   className="menu-item menu-btn"
                   onClick={() => {
