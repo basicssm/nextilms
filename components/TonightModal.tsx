@@ -8,6 +8,7 @@ import { WatchlistItem, WatchProvider } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 import { useFullWatchlist } from "@/hooks/useWatchlist";
+import { supabase } from "@/lib/supabase";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 const LOGO_BASE = "https://image.tmdb.org/t/p/original";
@@ -33,16 +34,18 @@ async function fetchWatchProviders(
   }
 }
 
-async function isSeriesStillAiring(filmId: number): Promise<boolean> {
+async function fetchLastAiredEpisode(
+  filmId: number
+): Promise<{ season: number; episode: number } | null> {
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/tv/${filmId}?api_key=${API_KEY}`
-    );
-    if (!res.ok) return true;
+    const res = await fetch(`${API_BASE_URL}/tv/${filmId}?api_key=${API_KEY}`);
+    if (!res.ok) return null;
     const data = await res.json();
-    return data.status !== "Ended" && data.status !== "Canceled";
+    const last = data.last_episode_to_air;
+    if (!last) return null;
+    return { season: last.season_number, episode: last.episode_number };
   } catch {
-    return true;
+    return null;
   }
 }
 
@@ -240,10 +243,34 @@ export default function TonightModal() {
       (item) => item.media_type === "series" && item.status === "to_watch"
     );
 
-    const stillAiringFlags = await Promise.all(
-      watchingCandidates.map((item) => isSeriesStillAiring(item.film_id))
-    );
-    const activeWatchingCandidates = watchingCandidates.filter((_, i) => stillAiringFlags[i]);
+    let activeWatchingCandidates = watchingCandidates;
+    if (watchingCandidates.length > 0) {
+      const seriesIds = watchingCandidates.map((item) => item.film_id);
+      const [lastAiredList, { data: watchedRows }] = await Promise.all([
+        Promise.all(seriesIds.map(fetchLastAiredEpisode)),
+        supabase
+          .from("watched_episodes")
+          .select("series_id,season_number,episode_number")
+          .eq("user_id", user!.id)
+          .in("series_id", seriesIds),
+      ]);
+
+      const watchedBySeriesId = new Map<number, Set<string>>();
+      for (const row of watchedRows ?? []) {
+        if (!watchedBySeriesId.has(row.series_id)) {
+          watchedBySeriesId.set(row.series_id, new Set());
+        }
+        watchedBySeriesId.get(row.series_id)!.add(`${row.season_number}-${row.episode_number}`);
+      }
+
+      activeWatchingCandidates = watchingCandidates.filter((item, i) => {
+        const last = lastAiredList[i];
+        if (!last) return true;
+        const watched = watchedBySeriesId.get(item.film_id);
+        if (!watched) return true;
+        return !watched.has(`${last.season}-${last.episode}`);
+      });
+    }
 
     const [filteredMovies, filteredWatching, filteredSeriesQueue] = await Promise.all([
       filterByPlatform(movieCandidates, "film", platformIds),
@@ -255,7 +282,7 @@ export default function TonightModal() {
     setSeriesWatching(filteredWatching);
     setSeriesToWatch(filteredSeriesQueue);
     setProcessing(false);
-  }, [items, platformIds]);
+  }, [items, platformIds, user]);
 
   const handleClose = useCallback(() => setOpen(false), []);
 
