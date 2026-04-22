@@ -12,6 +12,7 @@ import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "@/context/AuthContext";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 import Link from "next/link";
+import TonightModal from "@/components/TonightModal";
 
 type MediaType = "film" | "series";
 type FilmCategory = "popular" | "upcoming" | "trending" | "my_platforms";
@@ -200,6 +201,9 @@ function HomeContent() {
             Buscar
           </button>
         </div>
+
+        {/* Tonight recommendations button */}
+        <TonightModal />
 
         {/* Tipo de media — pills */}
         <div className="type-pills">
