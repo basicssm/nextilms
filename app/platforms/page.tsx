@@ -23,6 +23,7 @@ export default function PlatformsPage() {
   const [providers, setProviders] = useState<TmdbProvider[]>([]);
   const [fetching, setFetching] = useState(true);
   const [toggling, setToggling] = useState<Set<number>>(new Set());
+  const [toggleError, setToggleError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadProviders() {
@@ -54,11 +55,24 @@ export default function PlatformsPage() {
   async function handleToggle(provider: TmdbProvider) {
     if (!user || toggling.has(provider.provider_id)) return;
     setToggling((prev) => new Set([...prev, provider.provider_id]));
-    await toggle({
+    setToggleError(null);
+
+    const err = await toggle({
       provider_id: provider.provider_id,
       provider_name: provider.provider_name,
       logo_path: provider.logo_path,
     });
+
+    if (err) {
+      const isTableMissing =
+        err.includes("does not exist") || err.includes("42P01");
+      setToggleError(
+        isTableMissing
+          ? "La tabla user_platforms no existe. Ejecuta supabase/platforms_schema.sql en el SQL Editor de Supabase."
+          : `Error al guardar: ${err}`
+      );
+    }
+
     setToggling((prev) => {
       const next = new Set(prev);
       next.delete(provider.provider_id);
@@ -66,7 +80,8 @@ export default function PlatformsPage() {
     });
   }
 
-  const isLoading = fetching || authLoading || platformsLoading;
+  // Only block the grid on initial load (fetching providers or first platforms fetch)
+  const initialLoading = fetching || authLoading || (platformsLoading && platformIds.size === 0 && providers.length === 0);
 
   return (
     <>
@@ -90,17 +105,26 @@ export default function PlatformsPage() {
           </div>
         )}
 
-        {isLoading && (
+        {toggleError && (
+          <div className="error-banner">
+            <span className="error-icon">⚠️</span>
+            <p>{toggleError}</p>
+            <button className="error-close" onClick={() => setToggleError(null)}>✕</button>
+          </div>
+        )}
+
+        {initialLoading && (
           <div className="loading-wrap">
             <span className="spinner" />
           </div>
         )}
 
-        {!isLoading && providers.length > 0 && (
+        {!initialLoading && providers.length > 0 && (
           <>
             {platformIds.size > 0 && (
               <p className="selected-count">
-                {platformIds.size} {platformIds.size === 1 ? "plataforma seleccionada" : "plataformas seleccionadas"}
+                {platformIds.size}{" "}
+                {platformIds.size === 1 ? "plataforma seleccionada" : "plataformas seleccionadas"}
               </p>
             )}
             <div className="grid">
@@ -124,7 +148,11 @@ export default function PlatformsPage() {
                         height={56}
                         className="logo"
                       />
-                      {busy && <div className="busy-overlay"><span className="mini-spinner" /></div>}
+                      {busy && (
+                        <div className="busy-overlay">
+                          <span className="mini-spinner" />
+                        </div>
+                      )}
                     </div>
                     <span className="name">{p.provider_name}</span>
                     {selected && <span className="check">✓</span>}
@@ -176,6 +204,47 @@ export default function PlatformsPage() {
 
         .auth-icon {
           font-size: 20px;
+        }
+
+        .error-banner {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          background: rgba(220, 60, 60, 0.1);
+          border: 1px solid rgba(220, 60, 60, 0.3);
+          border-radius: 10px;
+          padding: 14px 18px;
+          margin-bottom: 24px;
+          color: #f08080;
+          font-size: 13px;
+          line-height: 1.5;
+        }
+
+        .error-icon {
+          flex-shrink: 0;
+          font-size: 16px;
+          margin-top: 1px;
+        }
+
+        .error-banner p {
+          flex: 1;
+          margin: 0;
+        }
+
+        .error-close {
+          background: none;
+          border: none;
+          color: #f08080;
+          cursor: pointer;
+          font-size: 14px;
+          padding: 0;
+          flex-shrink: 0;
+          opacity: 0.7;
+          transition: opacity 0.15s;
+        }
+
+        .error-close:hover {
+          opacity: 1;
         }
 
         .selected-count {
@@ -304,7 +373,9 @@ export default function PlatformsPage() {
         }
 
         @keyframes spin {
-          to { transform: rotate(360deg); }
+          to {
+            transform: rotate(360deg);
+          }
         }
 
         @media (max-width: 480px) {
