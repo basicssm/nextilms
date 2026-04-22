@@ -141,6 +141,7 @@ export default function PlatformsPage() {
           max-width: 960px;
           margin: 0 auto;
           padding: 32px 24px 64px;
+          animation: fadeInUp 0.3s ease both;
         }
 
         .header {
@@ -150,12 +151,14 @@ export default function PlatformsPage() {
         h1 {
           font-size: 1.8rem;
           font-weight: 800;
-          color: #f0f0f8;
+          font-family: var(--font-display);
+          color: var(--text);
           margin-bottom: 10px;
+          letter-spacing: -0.02em;
         }
 
         .subtitle {
-          color: #8888aa;
+          color: var(--text-muted);
           font-size: 14px;
           line-height: 1.6;
           max-width: 520px;
@@ -165,12 +168,12 @@ export default function PlatformsPage() {
           display: flex;
           align-items: center;
           gap: 12px;
-          background: rgba(212, 175, 55, 0.07);
-          border: 1px solid rgba(212, 175, 55, 0.18);
-          border-radius: 10px;
+          background: rgba(108, 99, 255, 0.07);
+          border: 1px solid rgba(108, 99, 255, 0.2);
+          border-radius: var(--radius-md);
           padding: 18px 22px;
           margin-bottom: 28px;
-          color: #c9a227;
+          color: var(--accent);
           font-size: 14px;
         }
 
@@ -179,9 +182,10 @@ export default function PlatformsPage() {
         }
 
         .selected-count {
-          color: #8888aa;
+          color: var(--text-muted);
           font-size: 13px;
           margin-bottom: 20px;
+          font-family: var(--font-mono);
         }
 
         .loading-wrap {
@@ -203,60 +207,62 @@ export default function PlatformsPage() {
           align-items: center;
           gap: 10px;
           padding: 16px 10px 14px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 2px solid rgba(255, 255, 255, 0.07);
-          border-radius: 12px;
+          background: var(--surface);
+          border: 2px solid var(--border);
+          border-radius: var(--radius-md);
           cursor: pointer;
           transition: all 0.18s ease;
           text-align: center;
         }
 
         .card:hover:not(.disabled) {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 255, 255, 0.18);
+          background: var(--surface-hover);
+          border-color: var(--border-hover);
           transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         }
 
         .card.selected {
-          background: rgba(212, 175, 55, 0.1);
-          border-color: rgba(212, 175, 55, 0.5);
+          background: rgba(212, 175, 55, 0.08);
+          border-color: rgba(212, 175, 55, 0.55);
+          box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.15), 0 8px 24px rgba(212, 175, 55, 0.1);
         }
 
         .card.selected:hover {
-          background: rgba(212, 175, 55, 0.15);
-          border-color: rgba(212, 175, 55, 0.7);
+          background: rgba(212, 175, 55, 0.13);
+          border-color: rgba(212, 175, 55, 0.75);
         }
 
         .card.disabled {
           cursor: default;
-          opacity: 0.6;
+          opacity: 0.5;
         }
 
         .logo-wrap {
           position: relative;
           width: 56px;
           height: 56px;
-          border-radius: 10px;
+          border-radius: var(--radius-sm);
           overflow: hidden;
           flex-shrink: 0;
         }
 
         :global(.logo) {
           display: block;
-          border-radius: 10px;
+          border-radius: var(--radius-sm);
         }
 
         .busy-overlay {
           position: absolute;
           inset: 0;
-          background: rgba(8, 8, 16, 0.6);
+          background: rgba(10, 10, 15, 0.65);
           display: flex;
           align-items: center;
           justify-content: center;
         }
 
         .name {
-          color: #c8c8de;
+          color: var(--text-muted);
           font-size: 11px;
           font-weight: 500;
           line-height: 1.3;
@@ -264,31 +270,32 @@ export default function PlatformsPage() {
         }
 
         .card.selected .name {
-          color: #e8d886;
+          color: #e0c96a;
         }
 
         .check {
           position: absolute;
-          top: 8px;
-          right: 8px;
+          top: 7px;
+          right: 7px;
           width: 18px;
           height: 18px;
           background: #d4af37;
           border-radius: 50%;
           font-size: 10px;
           font-weight: 800;
-          color: #080810;
+          color: #0a0a0f;
           display: flex;
           align-items: center;
           justify-content: center;
+          box-shadow: 0 2px 8px rgba(212, 175, 55, 0.5);
         }
 
         .spinner {
           display: inline-block;
           width: 32px;
           height: 32px;
-          border: 3px solid rgba(212, 175, 55, 0.18);
-          border-top-color: #d4af37;
+          border: 3px solid var(--border);
+          border-top-color: var(--accent);
           border-radius: 50%;
           animation: spin 0.8s linear infinite;
         }
@@ -297,7 +304,7 @@ export default function PlatformsPage() {
           display: inline-block;
           width: 16px;
           height: 16px;
-          border: 2px solid rgba(255, 255, 255, 0.2);
+          border: 2px solid rgba(255, 255, 255, 0.15);
           border-top-color: #fff;
           border-radius: 50%;
           animation: spin 0.6s linear infinite;
