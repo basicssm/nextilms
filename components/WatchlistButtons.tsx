@@ -10,6 +10,7 @@ type Props = {
   filmId: number;
   filmTitle: string;
   posterPath: string | null;
+  mediaType?: "film" | "series";
 };
 
 const BUTTONS: { status: WatchlistStatus; label: string; icon: string }[] = [
@@ -22,6 +23,7 @@ export default function WatchlistButtons({
   filmId,
   filmTitle,
   posterPath,
+  mediaType = "film",
 }: Props) {
   const { user } = useAuth();
   const { item, loading, setStatus } = useWatchlist(filmId);
@@ -32,12 +34,12 @@ export default function WatchlistButtons({
   // Execute pending action once the user logs in
   useEffect(() => {
     if (!prevUserRef.current && user && pendingStatusRef.current) {
-      setStatus(pendingStatusRef.current, filmTitle, posterPath);
+      setStatus(pendingStatusRef.current, filmTitle, posterPath, mediaType);
       pendingStatusRef.current = null;
       setShowAuth(false);
     }
     prevUserRef.current = user;
-  }, [user, filmTitle, posterPath, setStatus]);
+  }, [user, filmTitle, posterPath, mediaType, setStatus]);
 
   const handleClick = (status: WatchlistStatus) => {
     if (!user) {
@@ -45,7 +47,7 @@ export default function WatchlistButtons({
       setShowAuth(true);
       return;
     }
-    setStatus(status, filmTitle, posterPath);
+    setStatus(status, filmTitle, posterPath, mediaType);
   };
 
   return (

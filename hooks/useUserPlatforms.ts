@@ -7,12 +7,13 @@ export function useUserPlatforms() {
   const { user } = useAuth();
   const [platforms, setPlatforms] = useState<UserPlatform[]>([]);
   const [platformIds, setPlatformIds] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchPlatforms = useCallback(async () => {
     if (!user) {
       setPlatforms([]);
       setPlatformIds(new Set());
+      setLoading(false);
       return;
     }
     setLoading(true);

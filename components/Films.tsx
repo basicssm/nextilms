@@ -1,5 +1,8 @@
-import { film } from "@/types";
+"use client";
+
+import { film, WatchlistStatus } from "@/types";
 import Film from "./Film";
+import { useWatchlistMap } from "@/hooks/useWatchlist";
 
 export default function Films({
   films,
@@ -10,6 +13,8 @@ export default function Films({
   loading?: boolean;
   mediaType?: "film" | "series";
 }) {
+  const watchlistMap = useWatchlistMap();
+
   if (!films.length) {
     if (loading) return null;
     return (
@@ -30,7 +35,12 @@ export default function Films({
   return (
     <section className="grid">
       {films.map((film: film) => (
-        <Film key={film.id} film={film} mediaType={mediaType} />
+        <Film
+          key={film.id}
+          film={film}
+          mediaType={mediaType}
+          watchlistStatus={watchlistMap.get(Number(film.id)) ?? null}
+        />
       ))}
       <style jsx>{`
         .grid {

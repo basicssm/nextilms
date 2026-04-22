@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,14 +10,15 @@ import { useAuth } from "@/context/AuthContext";
 import { useFullWatchlist } from "@/hooks/useWatchlist";
 import { WatchlistItem, WatchlistStatus } from "@/types";
 
-const STATUS_CONFIG: Record<
-  WatchlistStatus,
-  { label: string; icon: string; color: string }
-> = {
+const STATUS_CONFIG: Record<WatchlistStatus, { label: string; icon: string; color: string }> = {
   watching: { label: "Viendo ahora", icon: "▶", color: "#3b82f6" },
   to_watch: { label: "Quiero ver", icon: "🔖", color: "#8b5cf6" },
   watched: { label: "Ya vistas", icon: "✓", color: "#22c55e" },
 };
+
+type StatusFilter = "all" | WatchlistStatus;
+type TypeFilter = "all" | "film" | "series";
+type SortOrder = "recent" | "alpha";
 
 function FilmCard({
   item,
@@ -32,13 +33,15 @@ function FilmCard({
     ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
     : `https://picsum.photos/seed/${item.film_id}/120/180`;
 
-  const otherStatuses = (
-    Object.keys(STATUS_CONFIG) as WatchlistStatus[]
-  ).filter((s) => s !== item.status);
+  const otherStatuses = (Object.keys(STATUS_CONFIG) as WatchlistStatus[]).filter(
+    (s) => s !== item.status
+  );
+
+  const href = item.media_type === "series" ? `/series/${item.film_id}` : `/film/${item.film_id}`;
 
   return (
     <div className="card">
-      <Link href={`/film/${item.film_id}`} className="card-img-link">
+      <Link href={href} className="card-img-link">
         <Image
           src={poster}
           alt={item.film_title}
@@ -48,6 +51,9 @@ function FilmCard({
         />
       </Link>
       <p className="card-title">{item.film_title}</p>
+      {item.media_type === "series" && (
+        <span className="type-chip">Serie</span>
+      )}
 
       <div className="card-actions">
         <div className="status-change">
@@ -78,7 +84,7 @@ function FilmCard({
           flex-shrink: 0;
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 6px;
         }
         :global(.card-img-link) {
           display: block;
@@ -96,6 +102,18 @@ function FilmCard({
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
+        }
+        .type-chip {
+          align-self: center;
+          background: rgba(212, 175, 55, 0.08);
+          border: 1px solid rgba(212, 175, 55, 0.2);
+          color: #d4af37;
+          font-size: 9px;
+          font-weight: 600;
+          padding: 1px 7px;
+          border-radius: 10px;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
         }
         .card-actions {
           display: flex;
@@ -247,6 +265,10 @@ export default function MyListPage() {
   const router = useRouter();
   const { items, loading, removeItem, changeStatus } = useFullWatchlist();
 
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("recent");
+
   useEffect(() => {
     if (!authLoading && !user) router.replace("/");
   }, [user, authLoading, router]);
@@ -283,9 +305,24 @@ export default function MyListPage() {
 
   if (!user) return null;
 
-  const byStatus = (s: WatchlistStatus) =>
-    items.filter((i) => i.status === s);
+  const filtered = items
+    .filter((i: WatchlistItem) => statusFilter === "all" || i.status === statusFilter)
+    .filter((i: WatchlistItem) => {
+      if (typeFilter === "all") return true;
+      const t = i.media_type ?? "film";
+      return t === typeFilter;
+    })
+    .sort((a: WatchlistItem, b: WatchlistItem) => {
+      if (sortOrder === "alpha") return a.film_title.localeCompare(b.film_title, "es");
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
+
   const total = items.length;
+  const filteredTotal = filtered.length;
+
+  const byStatus = (s: WatchlistStatus) => filtered.filter((i: WatchlistItem) => i.status === s);
+
+  const hasActiveFilter = statusFilter !== "all" || typeFilter !== "all";
 
   return (
     <>
@@ -298,10 +335,62 @@ export default function MyListPage() {
           <h1 className="page-title">Mi Lista</h1>
           {total > 0 && (
             <span className="total-badge">
-              {total} {total === 1 ? "título" : "títulos"}
+              {filteredTotal !== total ? `${filteredTotal} / ` : ""}{total}{" "}
+              {total === 1 ? "título" : "títulos"}
             </span>
           )}
         </div>
+
+        {total > 0 && (
+          <div className="filters-bar">
+            <div className="filter-group">
+              {(["all", "watching", "to_watch", "watched"] as StatusFilter[]).map((s) => (
+                <button
+                  key={s}
+                  className={`filter-btn${statusFilter === s ? " active" : ""}`}
+                  onClick={() => setStatusFilter(s)}
+                >
+                  {s === "all"
+                    ? "Todos"
+                    : `${STATUS_CONFIG[s as WatchlistStatus].icon} ${STATUS_CONFIG[s as WatchlistStatus].label}`}
+                </button>
+              ))}
+            </div>
+
+            <div className="filter-group">
+              {([
+                { id: "all", label: "Todo" },
+                { id: "film", label: "🎬 Películas" },
+                { id: "series", label: "📺 Series" },
+              ] as { id: TypeFilter; label: string }[]).map(({ id, label }) => (
+                <button
+                  key={id}
+                  className={`filter-btn type-btn${typeFilter === id ? " active" : ""}`}
+                  onClick={() => setTypeFilter(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="filter-group sort-group">
+              <button
+                className={`filter-btn${sortOrder === "recent" ? " active" : ""}`}
+                onClick={() => setSortOrder("recent")}
+                title="Ordenar por fecha"
+              >
+                🕐 Recientes
+              </button>
+              <button
+                className={`filter-btn${sortOrder === "alpha" ? " active" : ""}`}
+                onClick={() => setSortOrder("alpha")}
+                title="Ordenar alfabéticamente"
+              >
+                A–Z
+              </button>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="loading-text">Cargando tu lista...</div>
@@ -312,6 +401,25 @@ export default function MyListPage() {
               Explorar películas →
             </Link>
           </div>
+        ) : filteredTotal === 0 ? (
+          <div className="empty">
+            <p>No hay títulos con estos filtros.</p>
+            {hasActiveFilter && (
+              <button
+                className="reset-btn"
+                onClick={() => { setStatusFilter("all"); setTypeFilter("all"); }}
+              >
+                Quitar filtros
+              </button>
+            )}
+          </div>
+        ) : statusFilter !== "all" ? (
+          <Section
+            status={statusFilter}
+            items={filtered}
+            onRemove={removeItem}
+            onChangeStatus={changeStatus}
+          />
         ) : (
           <>
             <Section
@@ -348,7 +456,7 @@ export default function MyListPage() {
           display: flex;
           align-items: baseline;
           gap: 16px;
-          margin-bottom: 44px;
+          margin-bottom: 28px;
         }
         .page-title {
           color: #e8e8f2;
@@ -358,6 +466,43 @@ export default function MyListPage() {
         .total-badge {
           color: #8888aa;
           font-size: 14px;
+        }
+        .filters-bar {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-bottom: 36px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .filter-group {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+        .sort-group {
+          margin-left: auto;
+        }
+        .filter-btn {
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #8888aa;
+          font-size: 12px;
+          font-weight: 500;
+          padding: 5px 13px;
+          border-radius: 20px;
+          cursor: pointer;
+          transition: all 0.15s;
+          white-space: nowrap;
+        }
+        .filter-btn:hover {
+          border-color: rgba(212, 175, 55, 0.25);
+          color: #c8c8e0;
+        }
+        .filter-btn.active {
+          background: rgba(212, 175, 55, 0.13);
+          border-color: rgba(212, 175, 55, 0.4);
+          color: #d4af37;
         }
         .loading-text {
           color: #8888aa;
@@ -370,10 +515,13 @@ export default function MyListPage() {
           color: #8888aa;
           padding: 80px 0;
           font-size: 15px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 16px;
         }
         :global(.browse-link) {
           display: inline-block;
-          margin-top: 16px;
           color: #d4af37;
           text-decoration: none;
           font-size: 14px;
@@ -381,16 +529,36 @@ export default function MyListPage() {
         :global(.browse-link:hover) {
           text-decoration: underline;
         }
+        .reset-btn {
+          background: none;
+          border: 1px solid rgba(212, 175, 55, 0.3);
+          color: #d4af37;
+          font-size: 13px;
+          padding: 7px 18px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+        .reset-btn:hover {
+          background: rgba(212, 175, 55, 0.1);
+        }
 
         @media (max-width: 480px) {
           .page {
             padding: 24px 14px 60px;
           }
           .page-header {
-            margin-bottom: 28px;
+            margin-bottom: 20px;
           }
           .page-title {
             font-size: 1.4rem;
+          }
+          .filters-bar {
+            gap: 8px;
+            margin-bottom: 24px;
+          }
+          .sort-group {
+            margin-left: 0;
           }
         }
       `}</style>
