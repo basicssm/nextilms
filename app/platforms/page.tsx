@@ -245,31 +245,28 @@ export default function PlatformsPage() {
           align-items: center;
           gap: 10px;
           padding: 18px 8px 14px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 2px solid rgba(255, 255, 255, 0.08);
+          background: var(--surface);
+          border: 2px solid rgba(255, 255, 255, 0.06);
           border-radius: var(--radius-md);
           cursor: pointer;
-          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
           text-align: center;
         }
 
         .card:hover:not(.disabled) {
-          background: rgba(255, 255, 255, 0.07);
-          border-color: rgba(255, 255, 255, 0.16);
+          border-color: rgba(255, 255, 255, 0.14);
           transform: translateY(-2px);
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
         }
 
         .card.selected {
-          background: rgba(108, 99, 255, 0.12);
-          border-color: rgba(108, 99, 255, 0.55);
-          box-shadow: 0 0 20px rgba(108, 99, 255, 0.15);
+          border-color: rgba(108, 99, 255, 0.7);
+          box-shadow: 0 0 20px rgba(108, 99, 255, 0.18);
         }
 
         .card.selected:hover {
-          background: rgba(108, 99, 255, 0.18);
-          border-color: rgba(108, 99, 255, 0.75);
-          box-shadow: 0 6px 28px rgba(108, 99, 255, 0.25);
+          border-color: #6c63ff;
+          box-shadow: 0 6px 28px rgba(108, 99, 255, 0.28);
           transform: translateY(-2px);
         }
 
