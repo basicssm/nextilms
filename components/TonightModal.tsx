@@ -34,18 +34,29 @@ async function fetchWatchProviders(
   }
 }
 
-async function fetchLastAiredEpisode(
-  filmId: number
-): Promise<{ season: number; episode: number } | null> {
+async function fetchAiredEpisodeCount(filmId: number): Promise<number> {
   try {
     const res = await fetch(`${API_BASE_URL}/tv/${filmId}?api_key=${API_KEY}`);
-    if (!res.ok) return null;
+    if (!res.ok) return 0;
     const data = await res.json();
     const last = data.last_episode_to_air;
-    if (!last) return null;
-    return { season: last.season_number, episode: last.episode_number };
+    if (!last) return 0;
+    const lastAiredSeason: number = last.season_number;
+    const lastAiredEpisode: number = last.episode_number;
+    const seasons: Array<{ season_number: number; episode_count: number }> = data.seasons ?? [];
+    let total = 0;
+    for (const season of seasons) {
+      if (season.season_number === 0) continue;
+      if (season.season_number < lastAiredSeason) {
+        total += season.episode_count;
+      } else if (season.season_number === lastAiredSeason) {
+        total += lastAiredEpisode;
+        break;
+      }
+    }
+    return total;
   } catch {
-    return null;
+    return 0;
   }
 }
 
@@ -246,8 +257,8 @@ export default function TonightModal() {
     let activeWatchingCandidates = watchingCandidates;
     if (watchingCandidates.length > 0) {
       const seriesIds = watchingCandidates.map((item) => item.film_id);
-      const [lastAiredList, { data: watchedRows }] = await Promise.all([
-        Promise.all(seriesIds.map(fetchLastAiredEpisode)),
+      const [airedCounts, { data: watchedRows }] = await Promise.all([
+        Promise.all(seriesIds.map(fetchAiredEpisodeCount)),
         supabase
           .from("watched_episodes")
           .select("series_id,season_number,episode_number")
@@ -255,20 +266,20 @@ export default function TonightModal() {
           .in("series_id", seriesIds),
       ]);
 
-      const watchedBySeriesId = new Map<number, Set<string>>();
+      const watchedCountBySeries = new Map<number, number>();
       for (const row of watchedRows ?? []) {
-        if (!watchedBySeriesId.has(row.series_id)) {
-          watchedBySeriesId.set(row.series_id, new Set());
-        }
-        watchedBySeriesId.get(row.series_id)!.add(`${row.season_number}-${row.episode_number}`);
+        if (row.season_number === 0) continue;
+        watchedCountBySeries.set(
+          row.series_id,
+          (watchedCountBySeries.get(row.series_id) ?? 0) + 1
+        );
       }
 
       activeWatchingCandidates = watchingCandidates.filter((item, i) => {
-        const last = lastAiredList[i];
-        if (!last) return true;
-        const watched = watchedBySeriesId.get(item.film_id);
-        if (!watched) return true;
-        return !watched.has(`${last.season}-${last.episode}`);
+        const aired = airedCounts[i];
+        if (aired === 0) return true;
+        const watched = watchedCountBySeries.get(item.film_id) ?? 0;
+        return watched < aired;
       });
     }
 
