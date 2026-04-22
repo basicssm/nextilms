@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
 import { film } from "@/types";
 import NavBar from "@/components/NavBar";
 import Films from "@/components/Films";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 
@@ -58,9 +59,15 @@ function normalizeItem(item: {
   };
 }
 
-export default function Home() {
-  const [mediaType, setMediaType] = useState<MediaType>("film");
-  const [category, setCategory] = useState<Category>("popular");
+function HomeContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const initMediaType = (searchParams.get("mediaType") === "series" ? "series" : "film") as MediaType;
+  const initCategory = (searchParams.get("category") ?? "popular") as Category;
+
+  const [mediaType, setMediaType] = useState<MediaType>(initMediaType);
+  const [category, setCategory] = useState<Category>(initCategory);
   const [films, setFilms] = useState<film[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
@@ -68,7 +75,6 @@ export default function Home() {
   const hasMoreRef = useRef(true);
   const loadingRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;
@@ -119,10 +125,16 @@ export default function Home() {
   function switchMediaType(type: MediaType) {
     setMediaType(type);
     setCategory("popular");
+    router.replace(`/?mediaType=${type}&category=popular`);
+  }
+
+  function switchCategory(cat: Category) {
+    setCategory(cat);
+    router.replace(`/?mediaType=${mediaType}&category=${cat}`);
   }
 
   function handleSearch() {
-    if (searchText.trim()) router.push(`/search/${searchText.trim()}`);
+    if (searchText.trim()) router.push(`/search/${searchText.trim()}?mediaType=${mediaType}`);
   }
 
   function handleSearchKey(e: React.KeyboardEvent) {
@@ -134,7 +146,6 @@ export default function Home() {
       <NavBar />
 
       <div className="hero">
-        <h1 className="hero-title">whatwatch</h1>
         <div className="hero-search">
           <input
             type="text"
@@ -170,7 +181,7 @@ export default function Home() {
             <button
               key={id}
               className={`cat-tab${category === id ? " active" : ""}`}
-              onClick={() => setCategory(id)}
+              onClick={() => switchCategory(id)}
             >
               {label}
             </button>
@@ -189,20 +200,7 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 48px 24px 32px;
-          gap: 20px;
-        }
-
-        .hero-title {
-          font-family: var(--font-bebas), sans-serif;
-          font-size: clamp(64px, 12vw, 120px);
-          font-weight: 400;
-          letter-spacing: 0.06em;
-          color: #c8c8d8;
-          line-height: 1;
-          margin: 0;
-          text-transform: uppercase;
-          user-select: none;
+          padding: 32px 24px 24px;
         }
 
         .hero-search {
@@ -342,8 +340,7 @@ export default function Home() {
 
         @media (max-width: 480px) {
           .hero {
-            padding: 32px 16px 20px;
-            gap: 16px;
+            padding: 20px 12px 16px;
           }
           .hero-search {
             padding: 10px 14px;
@@ -361,5 +358,13 @@ export default function Home() {
         }
       `}</style>
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
   );
 }
