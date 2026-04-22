@@ -146,7 +146,6 @@ function HomeContent() {
       <NavBar />
 
       <div className="hero">
-        <h1 className="hero-title">whatwatch</h1>
         <div className="hero-search">
           <input
             type="text"
@@ -201,20 +200,7 @@ function HomeContent() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 48px 24px 32px;
-          gap: 20px;
-        }
-
-        .hero-title {
-          font-family: var(--font-bebas), sans-serif;
-          font-size: clamp(64px, 12vw, 120px);
-          font-weight: 400;
-          letter-spacing: 0.06em;
-          color: #c8c8d8;
-          line-height: 1;
-          margin: 0;
-          text-transform: uppercase;
-          user-select: none;
+          padding: 32px 24px 24px;
         }
 
         .hero-search {
@@ -354,8 +340,7 @@ function HomeContent() {
 
         @media (max-width: 480px) {
           .hero {
-            padding: 32px 16px 20px;
-            gap: 16px;
+            padding: 20px 12px 16px;
           }
           .hero-search {
             padding: 10px 14px;
