@@ -265,6 +265,7 @@ export default function Detail({
           display: flex;
           flex-direction: column;
           gap: 10px;
+          margin-top: 24px;
           margin-bottom: 20px;
         }
 
