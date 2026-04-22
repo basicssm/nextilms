@@ -20,19 +20,20 @@ export default function Back() {
           align-items: center;
           gap: 7px;
           background: none;
-          border: 1px solid rgba(212, 175, 55, 0.25);
-          color: #d4af37;
+          border: 1px solid var(--border);
+          color: var(--text-muted);
           padding: 8px 14px;
           min-height: 36px;
           border-radius: 6px;
           font-size: 13px;
           white-space: nowrap;
           flex-shrink: 0;
-          transition: background 0.2s, border-color 0.2s;
+          transition: background 0.2s, border-color 0.2s, color 0.2s;
         }
         .back-btn:hover {
-          background: rgba(212, 175, 55, 0.1);
-          border-color: rgba(212, 175, 55, 0.55);
+          background: var(--surface-hover);
+          border-color: var(--border-hover);
+          color: var(--text);
         }
 
         @media (max-width: 480px) {

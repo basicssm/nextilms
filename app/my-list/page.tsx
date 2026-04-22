@@ -105,17 +105,17 @@ function KanbanCard({
               </button>
             );
           })}
+          <button
+            className="remove-btn"
+            onClick={onRemove}
+            title="Quitar de la lista"
+            aria-label="Quitar"
+          >
+            <span>✕</span>
+            <span className="move-label">Quitar</span>
+          </button>
         </div>
       </div>
-
-      <button
-        className="kcard-remove"
-        onClick={onRemove}
-        title="Quitar de la lista"
-        aria-label="Quitar"
-      >
-        ✕
-      </button>
 
       <style jsx>{`
         .kcard {
@@ -153,7 +153,6 @@ function KanbanCard({
           display: flex;
           flex-direction: column;
           gap: 6px;
-          padding-right: 20px;
         }
         :global(.kcard-title-link) {
           text-decoration: none;
@@ -188,8 +187,10 @@ function KanbanCard({
           display: flex;
           gap: 4px;
           flex-wrap: wrap;
+          align-items: center;
         }
-        .move-btn {
+        .move-btn,
+        .remove-btn {
           display: flex;
           align-items: center;
           gap: 4px;
@@ -199,36 +200,24 @@ function KanbanCard({
           font-family: var(--font-body);
           font-size: 11px;
           font-weight: 500;
-          padding: 3px 8px;
+          padding: 5px 10px;
           border-radius: 20px;
           cursor: pointer;
           transition: all 0.15s;
+          white-space: nowrap;
         }
         .move-btn:hover {
           background: var(--move-bg);
           border-color: var(--move-border);
           color: var(--move-color);
         }
+        .remove-btn:hover {
+          background: rgba(255, 101, 132, 0.1);
+          border-color: rgba(255, 101, 132, 0.35);
+          color: #ff6584;
+        }
         .move-label {
           font-size: 10px;
-        }
-        .kcard-remove {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          background: none;
-          border: none;
-          color: var(--text-subtle);
-          font-size: 11px;
-          cursor: pointer;
-          padding: 4px;
-          border-radius: var(--radius-sm);
-          transition: color 0.15s, background 0.15s;
-          line-height: 1;
-        }
-        .kcard-remove:hover {
-          color: #ff6584;
-          background: rgba(255, 101, 132, 0.1);
         }
       `}</style>
     </div>
@@ -365,6 +354,28 @@ export default function MyListPage() {
   const [mobileTab, setMobileTab] = useState<WatchlistStatus>("watching");
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get("type") as TypeFilter;
+    const sort = params.get("sort") as SortOrder;
+    if (type && (["all", "film", "series"] as string[]).includes(type)) setTypeFilter(type);
+    if (sort && (["recent", "alpha"] as string[]).includes(sort)) setSortOrder(sort);
+  }, []);
+
+  const handleTypeFilter = (id: TypeFilter) => {
+    setTypeFilter(id);
+    const params = new URLSearchParams(window.location.search);
+    params.set("type", id);
+    router.replace(`/my-list?${params.toString()}`, { scroll: false });
+  };
+
+  const handleSortOrder = (order: SortOrder) => {
+    setSortOrder(order);
+    const params = new URLSearchParams(window.location.search);
+    params.set("sort", order);
+    router.replace(`/my-list?${params.toString()}`, { scroll: false });
+  };
+
+  useEffect(() => {
     if (!authLoading && !user) router.replace("/");
   }, [user, authLoading, router]);
 
@@ -450,7 +461,7 @@ export default function MyListPage() {
                   <button
                     key={id}
                     className={`filter-chip${typeFilter === id ? " active" : ""}`}
-                    onClick={() => setTypeFilter(id)}
+                    onClick={() => handleTypeFilter(id)}
                   >
                     {label}
                   </button>
@@ -460,13 +471,13 @@ export default function MyListPage() {
               <div className="filter-group sort-group">
                 <button
                   className={`filter-chip${sortOrder === "recent" ? " active" : ""}`}
-                  onClick={() => setSortOrder("recent")}
+                  onClick={() => handleSortOrder("recent")}
                 >
                   Recientes
                 </button>
                 <button
                   className={`filter-chip${sortOrder === "alpha" ? " active" : ""}`}
-                  onClick={() => setSortOrder("alpha")}
+                  onClick={() => handleSortOrder("alpha")}
                 >
                   A–Z
                 </button>
