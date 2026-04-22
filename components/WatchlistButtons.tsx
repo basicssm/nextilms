@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useWatchlist } from "@/hooks/useWatchlist";
-import { WatchlistStatus } from "@/types";
+import { WatchlistItem, WatchlistStatus } from "@/types";
 import AuthModal from "@/components/AuthModal";
 
 type Props = {
@@ -11,12 +10,19 @@ type Props = {
   filmTitle: string;
   posterPath: string | null;
   mediaType?: "film" | "series";
+  item: WatchlistItem | null;
+  loading: boolean;
+  setStatus: (
+    status: WatchlistStatus,
+    filmTitle: string,
+    posterPath: string | null,
+    mediaType?: "film" | "series"
+  ) => Promise<void>;
 };
 
 const BUTTONS: {
   status: WatchlistStatus;
   label: string;
-  shortLabel: string;
   icon: string;
   colorVar: string;
   bgVar: string;
@@ -25,7 +31,6 @@ const BUTTONS: {
   {
     status: "watching",
     label: "Viendo",
-    shortLabel: "Viendo",
     icon: "▶",
     colorVar: "var(--watching)",
     bgVar: "var(--watching-bg)",
@@ -34,7 +39,6 @@ const BUTTONS: {
   {
     status: "to_watch",
     label: "Por ver",
-    shortLabel: "Por ver",
     icon: "◷",
     colorVar: "var(--to-watch)",
     bgVar: "var(--to-watch-bg)",
@@ -43,7 +47,6 @@ const BUTTONS: {
   {
     status: "watched",
     label: "Vista",
-    shortLabel: "Vista",
     icon: "✓",
     colorVar: "var(--watched)",
     bgVar: "var(--watched-bg)",
@@ -56,9 +59,11 @@ export default function WatchlistButtons({
   filmTitle,
   posterPath,
   mediaType = "film",
+  item,
+  loading,
+  setStatus,
 }: Props) {
   const { user } = useAuth();
-  const { item, loading, setStatus } = useWatchlist(filmId);
   const [showAuth, setShowAuth] = useState(false);
   const pendingStatusRef = useRef<WatchlistStatus | null>(null);
   const prevUserRef = useRef(user);
@@ -80,6 +85,9 @@ export default function WatchlistButtons({
     }
     setStatus(status, filmTitle, posterPath, mediaType);
   };
+
+  // filmId is kept in props in case we need it for future use (e.g. deep links)
+  void filmId;
 
   return (
     <>

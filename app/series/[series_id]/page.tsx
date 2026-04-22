@@ -92,6 +92,12 @@ export default function SeriesDetailPage({
   const seriesInfo = {
     seasons: data.number_of_seasons,
     episodes: data.number_of_episodes,
+    seasonsList: (data.seasons ?? []) as {
+      id: number;
+      name: string;
+      season_number: number;
+      episode_count: number;
+    }[],
   };
 
   const videoList = videoError ? [] : (videoData?.results ?? []);

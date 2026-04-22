@@ -4,7 +4,9 @@ import Image from "next/image";
 import YouTube from "react-youtube";
 import { filmDetail, WatchProvider } from "@/types";
 import WatchlistButtons from "@/components/WatchlistButtons";
+import EpisodeTracker, { SeasonInfo } from "@/components/EpisodeTracker";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
+import { useWatchlist } from "@/hooks/useWatchlist";
 
 const PROVIDER_LOGO_BASE = "https://image.tmdb.org/t/p/original";
 
@@ -19,6 +21,7 @@ type VideoResult = { key: string; name?: string };
 type SeriesInfo = {
   seasons?: number;
   episodes?: number;
+  seasonsList?: SeasonInfo[];
 };
 
 export default function Detail({
@@ -33,9 +36,10 @@ export default function Detail({
   mediaType?: "film" | "series";
 }) {
   const { platformIds } = useUserPlatforms();
+  const filmId = Number(film.id);
+  const { item: watchlistItem, loading: watchlistLoading, setStatus } = useWatchlist(filmId);
 
   const {
-    id,
     title,
     poster_path,
     backdrop_path,
@@ -136,11 +140,24 @@ export default function Detail({
 
           {/* Botones watchlist */}
           <WatchlistButtons
-            filmId={Number(id)}
+            filmId={filmId}
             filmTitle={title}
             posterPath={poster_path ?? null}
             mediaType={mediaType}
+            item={watchlistItem}
+            loading={watchlistLoading}
+            setStatus={setStatus}
           />
+
+          {/* Seguimiento de episodios (solo series en estado "viendo") */}
+          {mediaType === "series" && seriesInfo?.seasonsList && seriesInfo.seasonsList.length > 0 && (
+            <EpisodeTracker
+              seriesId={filmId}
+              seasons={seriesInfo.seasonsList}
+              totalEpisodes={seriesInfo.episodes ?? 0}
+              watchlistStatus={watchlistItem?.status ?? null}
+            />
+          )}
 
           {/* Plataformas */}
           {watch_providers && watch_providers.length > 0 && (
