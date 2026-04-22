@@ -77,19 +77,28 @@ export default function PlatformsPage() {
     return (
       <button
         key={p.provider_id}
-        className={`card${selected ? " selected" : ""}`}
+        className={`card${selected ? " selected" : ""}${!user ? " disabled" : ""}`}
         onClick={() => handleToggle(p)}
         disabled={!user || busy}
         title={user ? p.provider_name : "Inicia sesión para seleccionar"}
         aria-pressed={selected}
       >
-        <Image
-          src={`${LOGO_BASE}${p.logo_path}`}
-          alt={p.provider_name}
-          width={60}
-          height={60}
-        />
-        <span>{p.provider_name}</span>
+        <div className="logo-wrap">
+          <Image
+            src={`${LOGO_BASE}${p.logo_path}`}
+            alt={p.provider_name}
+            fill
+            style={{ objectFit: "cover" }}
+          />
+        </div>
+        <span className="name">{p.provider_name}</span>
+        {selected && (
+          <span className="check" aria-hidden>
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+              <path d="M1 3.5L3.8 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        )}
       </button>
     );
   }
@@ -158,33 +167,64 @@ export default function PlatformsPage() {
 
         .grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
           gap: 12px;
           margin-bottom: 40px;
         }
 
         .card {
+          position: relative;
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 8px;
-          padding: 12px 8px;
+          padding: 10px 8px 12px;
           background: var(--surface);
           border: 2px solid transparent;
-          border-radius: 8px;
+          border-radius: 12px;
           cursor: pointer;
           text-align: center;
-          color: var(--text-muted);
-          font-size: 11px;
         }
 
         .card.selected {
-          border-color: var(--accent);
+          border-color: var(--gold);
         }
 
-        .card:disabled {
+        .card.disabled {
           opacity: 0.45;
           cursor: default;
+        }
+
+        .logo-wrap {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 1;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .name {
+          font-size: 11px;
+          color: var(--text-muted);
+          line-height: 1.3;
+          word-break: break-word;
+        }
+
+        .card.selected .name {
+          color: var(--gold);
+        }
+
+        .check {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          width: 20px;
+          height: 20px;
+          background: var(--gold);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
       `}</style>
     </>
