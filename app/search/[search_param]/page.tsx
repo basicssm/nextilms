@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { Suspense, use } from "react";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { film } from "@/types";
@@ -8,6 +8,7 @@ import NavBar from "@/components/NavBar";
 import Films from "@/components/Films";
 import Search from "@/components/Search";
 import Back from "@/components/Back";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type MediaType = "film" | "series";
 
@@ -35,13 +36,12 @@ function normalizeItem(item: {
   };
 }
 
-export default function SearchPage({
-  params,
-}: {
-  params: Promise<{ search_param: string }>;
-}) {
-  const { search_param } = use(params);
-  const [mediaType, setMediaType] = useState<MediaType>("film");
+function SearchContent({ search_param }: { search_param: string }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const initMediaType = (searchParams.get("mediaType") === "series" ? "series" : "film") as MediaType;
+  const [mediaType, setMediaType] = useState<MediaType>(initMediaType);
   const [films, setFilms] = useState<film[]>([]);
   const [loading, setLoading] = useState(true);
   const pageRef = useRef(1);
@@ -93,6 +93,11 @@ export default function SearchPage({
     return () => observer.disconnect();
   }, [loadMore]);
 
+  function switchMediaType(type: MediaType) {
+    setMediaType(type);
+    router.replace(`/search/${search_param}?mediaType=${type}`);
+  }
+
   return (
     <>
       <NavBar>
@@ -105,13 +110,13 @@ export default function SearchPage({
       <div className="search-tabs">
         <button
           className={`stab${mediaType === "film" ? " active" : ""}`}
-          onClick={() => setMediaType("film")}
+          onClick={() => switchMediaType("film")}
         >
           Películas
         </button>
         <button
           className={`stab${mediaType === "series" ? " active" : ""}`}
-          onClick={() => setMediaType("series")}
+          onClick={() => switchMediaType("series")}
         >
           Series
         </button>
@@ -187,5 +192,18 @@ export default function SearchPage({
         }
       `}</style>
     </>
+  );
+}
+
+export default function SearchPage({
+  params,
+}: {
+  params: Promise<{ search_param: string }>;
+}) {
+  const { search_param } = use(params);
+  return (
+    <Suspense>
+      <SearchContent search_param={search_param} />
+    </Suspense>
   );
 }

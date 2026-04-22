@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
 import { film } from "@/types";
 import NavBar from "@/components/NavBar";
 import Films from "@/components/Films";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 
@@ -58,9 +59,15 @@ function normalizeItem(item: {
   };
 }
 
-export default function Home() {
-  const [mediaType, setMediaType] = useState<MediaType>("film");
-  const [category, setCategory] = useState<Category>("popular");
+function HomeContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const initMediaType = (searchParams.get("mediaType") === "series" ? "series" : "film") as MediaType;
+  const initCategory = (searchParams.get("category") ?? "popular") as Category;
+
+  const [mediaType, setMediaType] = useState<MediaType>(initMediaType);
+  const [category, setCategory] = useState<Category>(initCategory);
   const [films, setFilms] = useState<film[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
@@ -68,7 +75,6 @@ export default function Home() {
   const hasMoreRef = useRef(true);
   const loadingRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;
@@ -119,10 +125,16 @@ export default function Home() {
   function switchMediaType(type: MediaType) {
     setMediaType(type);
     setCategory("popular");
+    router.replace(`/?mediaType=${type}&category=popular`);
+  }
+
+  function switchCategory(cat: Category) {
+    setCategory(cat);
+    router.replace(`/?mediaType=${mediaType}&category=${cat}`);
   }
 
   function handleSearch() {
-    if (searchText.trim()) router.push(`/search/${searchText.trim()}`);
+    if (searchText.trim()) router.push(`/search/${searchText.trim()}?mediaType=${mediaType}`);
   }
 
   function handleSearchKey(e: React.KeyboardEvent) {
@@ -170,7 +182,7 @@ export default function Home() {
             <button
               key={id}
               className={`cat-tab${category === id ? " active" : ""}`}
-              onClick={() => setCategory(id)}
+              onClick={() => switchCategory(id)}
             >
               {label}
             </button>
@@ -361,5 +373,13 @@ export default function Home() {
         }
       `}</style>
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
   );
 }
