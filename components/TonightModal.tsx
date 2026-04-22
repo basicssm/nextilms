@@ -8,6 +8,7 @@ import { WatchlistItem, WatchProvider } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 import { useFullWatchlist } from "@/hooks/useWatchlist";
+import { supabase } from "@/lib/supabase";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 const LOGO_BASE = "https://image.tmdb.org/t/p/original";
@@ -30,6 +31,21 @@ async function fetchWatchProviders(
     return esRegion?.flatrate ?? esRegion?.free ?? [];
   } catch {
     return [];
+  }
+}
+
+async function fetchLastAiredEpisode(
+  filmId: number
+): Promise<{ season: number; episode: number } | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/tv/${filmId}?api_key=${API_KEY}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const last = data.last_episode_to_air;
+    if (!last) return null;
+    return { season: last.season_number, episode: last.episode_number };
+  } catch {
+    return null;
   }
 }
 
@@ -227,9 +243,38 @@ export default function TonightModal() {
       (item) => item.media_type === "series" && item.status === "to_watch"
     );
 
+    let activeWatchingCandidates = watchingCandidates;
+    if (watchingCandidates.length > 0) {
+      const seriesIds = watchingCandidates.map((item) => item.film_id);
+      const [lastAiredList, { data: watchedRows }] = await Promise.all([
+        Promise.all(seriesIds.map(fetchLastAiredEpisode)),
+        supabase
+          .from("watched_episodes")
+          .select("series_id,season_number,episode_number")
+          .eq("user_id", user!.id)
+          .in("series_id", seriesIds),
+      ]);
+
+      const watchedBySeriesId = new Map<number, Set<string>>();
+      for (const row of watchedRows ?? []) {
+        if (!watchedBySeriesId.has(row.series_id)) {
+          watchedBySeriesId.set(row.series_id, new Set());
+        }
+        watchedBySeriesId.get(row.series_id)!.add(`${row.season_number}-${row.episode_number}`);
+      }
+
+      activeWatchingCandidates = watchingCandidates.filter((item, i) => {
+        const last = lastAiredList[i];
+        if (!last) return true;
+        const watched = watchedBySeriesId.get(item.film_id);
+        if (!watched) return true;
+        return !watched.has(`${last.season}-${last.episode}`);
+      });
+    }
+
     const [filteredMovies, filteredWatching, filteredSeriesQueue] = await Promise.all([
       filterByPlatform(movieCandidates, "film", platformIds),
-      filterByPlatform(watchingCandidates, "series", platformIds),
+      filterByPlatform(activeWatchingCandidates, "series", platformIds),
       filterByPlatform(seriesToWatchCandidates, "series", platformIds),
     ]);
 
@@ -237,7 +282,7 @@ export default function TonightModal() {
     setSeriesWatching(filteredWatching);
     setSeriesToWatch(filteredSeriesQueue);
     setProcessing(false);
-  }, [items, platformIds]);
+  }, [items, platformIds, user]);
 
   const handleClose = useCallback(() => setOpen(false), []);
 
@@ -255,7 +300,7 @@ export default function TonightModal() {
     <>
       <button className="tonight-btn" onClick={handleOpen}>
         <span className="star" aria-hidden>✦</span>
-        ¿Qué veré esta noche?
+        ¿Que puedo ver ahora?
       </button>
 
       {open && (
@@ -265,11 +310,11 @@ export default function TonightModal() {
           onClick={handleOverlayClick}
           role="presentation"
         >
-          <div className="modal" role="dialog" aria-modal="true" aria-label="Recomendaciones para esta noche">
+          <div className="modal" role="dialog" aria-modal="true" aria-label="¿Que puedo ver ahora?">
             <div className="modal-head">
               <h2 className="modal-title">
                 <span className="star-title" aria-hidden>✦</span>
-                ¿Qué veré esta noche?
+                ¿Que puedo ver ahora?
               </h2>
               <button className="close-btn" onClick={handleClose} aria-label="Cerrar">
                 ✕
