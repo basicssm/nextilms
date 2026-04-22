@@ -80,7 +80,7 @@ export default function DetailPage({
       <NavBar>
         <Back />
       </NavBar>
-      <Detail film={{ ...data, watch_providers: watchProviders }} videos={videoList} />
+      <Detail film={{ ...data, watch_providers: watchProviders }} videos={videoList} mediaType="film" />
     </>
   );
 }

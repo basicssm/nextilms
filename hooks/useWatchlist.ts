@@ -3,6 +3,26 @@ import { supabase } from "@/lib/supabase";
 import { WatchlistItem, WatchlistStatus } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 
+export function useWatchlistMap(): Map<number, WatchlistStatus> {
+  const { user } = useAuth();
+  const [map, setMap] = useState<Map<number, WatchlistStatus>>(new Map());
+
+  useEffect(() => {
+    if (!user) { setMap(new Map()); return; }
+    supabase
+      .from("watchlist")
+      .select("film_id,status")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        const m = new Map<number, WatchlistStatus>();
+        for (const item of (data ?? [])) m.set(item.film_id, item.status as WatchlistStatus);
+        setMap(m);
+      });
+  }, [user]);
+
+  return map;
+}
+
 export function useWatchlist(filmId?: number) {
   const { user } = useAuth();
   const [item, setItem] = useState<WatchlistItem | null>(null);
@@ -30,7 +50,8 @@ export function useWatchlist(filmId?: number) {
     async (
       status: WatchlistStatus,
       filmTitle: string,
-      posterPath: string | null
+      posterPath: string | null,
+      mediaType: "film" | "series" = "film"
     ) => {
       if (!user || !filmId) return;
       setLoading(true);
@@ -48,6 +69,7 @@ export function useWatchlist(filmId?: number) {
               film_title: filmTitle,
               poster_path: posterPath,
               status,
+              media_type: mediaType,
               updated_at: new Date().toISOString(),
             },
             { onConflict: "user_id,film_id" }

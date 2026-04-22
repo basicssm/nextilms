@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { film as filmType } from "@/types";
+import { film as filmType, WatchlistStatus } from "@/types";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w342";
 const FALLBACK = "https://picsum.photos/id/444/200/300";
@@ -19,11 +19,26 @@ function getStatusBadge(releaseDate: string | undefined, mediaType: "film" | "se
   return null;
 }
 
-export default function Film({ film, mediaType = "film" }: { film: filmType; mediaType?: "film" | "series" }) {
+const WATCHLIST_BADGE: Record<WatchlistStatus, { icon: string; label: string; color: string }> = {
+  watching: { icon: "▶", label: "Viendo", color: "#3b82f6" },
+  to_watch: { icon: "🔖", label: "Por ver", color: "#8b5cf6" },
+  watched: { icon: "✓", label: "Vista", color: "#22c55e" },
+};
+
+export default function Film({
+  film,
+  mediaType = "film",
+  watchlistStatus,
+}: {
+  film: filmType;
+  mediaType?: "film" | "series";
+  watchlistStatus?: WatchlistStatus | null;
+}) {
   const { id, title, poster_path, vote_average, release_date } = film;
   const src = poster_path ? `${POSTER_BASE}${poster_path}` : FALLBACK;
-  const href = mediaType === "series" ? `/series/${id}` : `/film/${id}`;
-  const statusBadge = getStatusBadge(release_date, mediaType);
+  const resolvedType = film.mediaType ?? mediaType;
+  const href = resolvedType === "series" ? `/series/${id}` : `/film/${id}`;
+  const statusBadge = getStatusBadge(release_date, resolvedType);
 
   return (
     <div className="card">
@@ -45,6 +60,15 @@ export default function Film({ film, mediaType = "film" }: { film: filmType; med
           )}
           {statusBadge === "theaters" && (
             <span className="status-badge theaters">🍿 En cines</span>
+          )}
+          {watchlistStatus && (
+            <span
+              className="watchlist-badge"
+              style={{ color: WATCHLIST_BADGE[watchlistStatus].color }}
+              title={WATCHLIST_BADGE[watchlistStatus].label}
+            >
+              {WATCHLIST_BADGE[watchlistStatus].icon}
+            </span>
           )}
           {vote_average != null && vote_average > 0 && (
             <span className="rating-badge">★ {vote_average.toFixed(1)}</span>
@@ -179,6 +203,24 @@ export default function Film({ film, mediaType = "film" }: { film: filmType; med
           background: rgba(0, 0, 0, 0.65);
           color: #f5c842;
           border: 1px solid rgba(245, 200, 66, 0.35);
+        }
+
+        .watchlist-badge {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: rgba(0, 0, 0, 0.7);
+          font-size: 11px;
+          font-weight: 700;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          z-index: 3;
         }
       `}</style>
     </div>

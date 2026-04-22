@@ -4,6 +4,7 @@ export type film = {
   poster_path: string;
   vote_average?: number;
   release_date?: string;
+  mediaType?: "film" | "series";
 };
 
 export type WatchProvider = {
@@ -55,6 +56,7 @@ export type WatchlistItem = {
   film_title: string;
   poster_path: string | null;
   status: WatchlistStatus;
+  media_type?: "film" | "series";
   created_at: string;
   updated_at: string;
 };

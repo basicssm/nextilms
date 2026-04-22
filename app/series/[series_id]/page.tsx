@@ -101,7 +101,7 @@ export default function SeriesDetailPage({
       <NavBar>
         <Back />
       </NavBar>
-      <Detail film={normalized} videos={videoList} seriesInfo={seriesInfo} />
+      <Detail film={normalized} videos={videoList} seriesInfo={seriesInfo} mediaType="series" />
     </>
   );
 }

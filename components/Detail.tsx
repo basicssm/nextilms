@@ -25,10 +25,12 @@ export default function Detail({
   film,
   videos,
   seriesInfo,
+  mediaType = "film",
 }: {
   film: filmDetail;
   videos: VideoResult[];
   seriesInfo?: SeriesInfo;
+  mediaType?: "film" | "series";
 }) {
   const { platformIds } = useUserPlatforms();
 
@@ -120,6 +122,7 @@ export default function Detail({
             filmId={Number(id)}
             filmTitle={title}
             posterPath={poster_path ?? null}
+            mediaType={mediaType}
           />
 
           {watch_providers && watch_providers.length > 0 && (
