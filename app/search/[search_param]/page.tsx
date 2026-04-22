@@ -6,7 +6,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { film } from "@/types";
 import NavBar from "@/components/NavBar";
 import Films from "@/components/Films";
-import Search from "@/components/Search";
 import Back from "@/components/Back";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -21,18 +20,26 @@ function buildSearchUrl(mediaType: MediaType, query: string, page: number): stri
   return `${API_BASE_URL}/search/${endpoint}?${auth}&query=${encodeURIComponent(query)}&page=${page}&include_adult=false`;
 }
 
-function normalizeItem(item: {
-  id: string;
-  title?: string;
-  name?: string;
-  poster_path: string;
-  vote_average: number;
-  release_date?: string;
-  first_air_date?: string;
-  media_type?: string;
-}): film | null {
+function normalizeItem(
+  item: {
+    id: string;
+    title?: string;
+    name?: string;
+    poster_path: string;
+    vote_average: number;
+    release_date?: string;
+    first_air_date?: string;
+    media_type?: string;
+  },
+  fallback: "film" | "series" = "film"
+): film | null {
   if (item.media_type === "person") return null;
-  const mt = item.media_type === "tv" ? "series" : "film";
+  const mt =
+    item.media_type === "tv"
+      ? "series"
+      : item.media_type === "movie"
+      ? "film"
+      : fallback;
   return {
     id: item.id,
     title: item.title ?? item.name ?? "",
@@ -67,8 +74,9 @@ function SearchContent({ search_param }: { search_param: string }) {
       const res = await fetch(url);
       const data = await res.json();
       if (data.results) {
+        const fallback = mediaType === "series" ? "series" : "film";
         const normalized = data.results
-          .map(normalizeItem)
+          .map((item: Parameters<typeof normalizeItem>[0]) => normalizeItem(item, fallback))
           .filter((f: film | null): f is film => f !== null);
         setFilms((prev) => [...prev, ...normalized]);
         hasMoreRef.current = pageRef.current < (data.total_pages ?? 1);
@@ -115,10 +123,7 @@ function SearchContent({ search_param }: { search_param: string }) {
   return (
     <>
       <NavBar>
-        <div className="search-nav">
-          <Back />
-          <Search />
-        </div>
+        <Back />
       </NavBar>
 
       <div className="search-tabs">
@@ -140,12 +145,6 @@ function SearchContent({ search_param }: { search_param: string }) {
       </div>
 
       <style jsx>{`
-        .search-nav {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
         .search-tabs {
           display: flex;
           gap: 4px;
