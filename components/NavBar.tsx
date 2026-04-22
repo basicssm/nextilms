@@ -1,13 +1,26 @@
+"use client";
+
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import NavUserMenu from "@/components/NavUserMenu";
 
 export default function NavBar({ children }: { children?: ReactNode }) {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header>
+    <header className={scrolled ? "scrolled" : ""}>
       <nav className="nav">
         <div className="nav-left">{children}</div>
-        <Link href="/" className="brand">whatwatch</Link>
+        <Link href="/" className="brand">
+          <span className="brand-w">W</span>
+          <span className="brand-rest">hatWatch</span>
+        </Link>
         <div className="nav-right">
           <NavUserMenu />
         </div>
@@ -17,35 +30,53 @@ export default function NavBar({ children }: { children?: ReactNode }) {
           position: sticky;
           top: 0;
           z-index: 30;
+          transition: all 0.25s ease;
         }
         .nav {
           display: grid;
           grid-template-columns: 1fr auto 1fr;
           align-items: center;
-          padding: 10px 24px;
-          background: rgba(8, 8, 16, 0.88);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+          height: 64px;
+          padding: 0 24px;
+          background: rgba(10, 10, 15, 0.72);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-bottom: 1px solid var(--border);
+          transition: height 0.25s ease, background 0.25s ease;
+        }
+        header.scrolled .nav {
+          height: 52px;
+          background: rgba(10, 10, 15, 0.92);
+          border-bottom-color: var(--border-hover);
         }
         .nav-left {
           display: flex;
           align-items: center;
         }
         :global(.brand) {
-          font-family: var(--font-bebas), sans-serif;
-          font-size: 32px;
-          font-weight: 400;
-          letter-spacing: 0.06em;
-          color: #d4af37;
+          font-family: var(--font-syne), sans-serif;
+          font-size: 22px;
+          font-weight: 800;
+          letter-spacing: -0.01em;
           text-decoration: none;
           text-align: center;
           line-height: 1;
-          padding: 2px 0;
+          display: flex;
+          align-items: center;
           transition: opacity 0.2s;
         }
         :global(.brand:hover) {
-          opacity: 0.75;
+          opacity: 0.8;
+        }
+        :global(.brand-w) {
+          background: var(--accent-gradient);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          font-size: 26px;
+        }
+        :global(.brand-rest) {
+          color: var(--text);
         }
         .nav-right {
           display: flex;
@@ -55,10 +86,17 @@ export default function NavBar({ children }: { children?: ReactNode }) {
 
         @media (max-width: 480px) {
           .nav {
-            padding: 10px 12px;
+            padding: 0 14px;
+            height: 56px;
+          }
+          header.scrolled .nav {
+            height: 48px;
           }
           :global(.brand) {
-            font-size: 26px;
+            font-size: 18px;
+          }
+          :global(.brand-w) {
+            font-size: 22px;
           }
         }
       `}</style>

@@ -19,10 +19,10 @@ function getStatusBadge(releaseDate: string | undefined, mediaType: "film" | "se
   return null;
 }
 
-const WATCHLIST_BADGE: Record<WatchlistStatus, { icon: string; label: string; color: string }> = {
-  watching: { icon: "▶", label: "Viendo", color: "#3b82f6" },
-  to_watch: { icon: "🔖", label: "Por ver", color: "#8b5cf6" },
-  watched: { icon: "✓", label: "Vista", color: "#22c55e" },
+const WATCHLIST_CONFIG: Record<WatchlistStatus, { label: string; cssVar: string }> = {
+  watching: { label: "Viendo", cssVar: "var(--watching)" },
+  to_watch:  { label: "Por ver", cssVar: "var(--to-watch)" },
+  watched:   { label: "Vista",   cssVar: "var(--watched)" },
 };
 
 export default function Film({
@@ -39,6 +39,7 @@ export default function Film({
   const resolvedType = film.mediaType ?? mediaType;
   const href = resolvedType === "series" ? `/series/${id}` : `/film/${id}`;
   const statusBadge = getStatusBadge(release_date, resolvedType);
+  const wlCfg = watchlistStatus ? WATCHLIST_CONFIG[watchlistStatus] : null;
 
   return (
     <div className="card">
@@ -49,102 +50,111 @@ export default function Film({
             alt={title}
             fill
             sizes="(max-width: 480px) 44vw, (max-width: 768px) 25vw, 170px"
-            style={{ objectFit: "cover" }}
+            style={{ objectFit: "cover", transition: "transform 0.35s ease" }}
+            className="poster-img"
           />
           <div className="bottom-fade" />
+
+          {/* Hover overlay: título + rating */}
           <div className="hover-overlay">
             <p className="title">{title}</p>
+            {vote_average != null && vote_average > 0 && (
+              <p className="rating-inline">★ {vote_average.toFixed(1)}</p>
+            )}
           </div>
+
+          {/* Badges superiores izquierda */}
           {statusBadge === "upcoming" && (
-            <span className="status-badge upcoming">⏰ Próximamente</span>
+            <span className="badge badge-upcoming">Próximamente</span>
           )}
           {statusBadge === "theaters" && (
-            <span className="status-badge theaters">🍿 En cines</span>
+            <span className="badge badge-theaters">En cines</span>
           )}
-          {watchlistStatus && (
+          {wlCfg && !statusBadge && (
             <span
-              className="watchlist-badge"
-              style={{ color: WATCHLIST_BADGE[watchlistStatus].color }}
-              title={WATCHLIST_BADGE[watchlistStatus].label}
+              className="badge badge-watchlist"
+              style={{ "--wl-color": wlCfg.cssVar } as React.CSSProperties}
             >
-              {WATCHLIST_BADGE[watchlistStatus].icon}
+              {wlCfg.label}
             </span>
           )}
+
+          {/* Rating esquina inferior derecha */}
           {vote_average != null && vote_average > 0 && (
             <span className="rating-badge">★ {vote_average.toFixed(1)}</span>
           )}
         </div>
       </Link>
+
       <style jsx>{`
         .card {
           width: 100%;
           animation: fadeInUp 0.3s ease both;
         }
 
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(12px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
         .poster-wrap {
           position: relative;
           width: 100%;
           aspect-ratio: 2 / 3;
-          border-radius: 8px;
+          border-radius: 16px;
           overflow: hidden;
           cursor: pointer;
-          box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65);
-          transition: transform 0.22s ease, box-shadow 0.22s ease;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+          background: var(--surface);
+          transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
 
         .poster-wrap:hover {
-          transform: translateY(-4px) scale(1.02);
-          box-shadow: 0 12px 36px rgba(0, 0, 0, 0.9);
+          transform: translateY(-4px);
+          box-shadow: 0 16px 40px rgba(108, 99, 255, 0.2), 0 8px 24px rgba(0, 0, 0, 0.7);
         }
 
-        /* Permanent subtle gradient so rating badge is always readable */
+        .poster-wrap:hover :global(.poster-img) {
+          transform: scale(1.04);
+        }
+
+        .poster-wrap:active {
+          transform: translateY(-2px) scale(0.99);
+        }
+
+        /* Fade permanente para legibilidad del rating */
         .bottom-fade {
           position: absolute;
           inset: 0;
           background: linear-gradient(
             to top,
-            rgba(0, 0, 0, 0.62) 0%,
-            transparent 38%
+            rgba(0, 0, 0, 0.55) 0%,
+            transparent 35%
           );
           pointer-events: none;
           z-index: 1;
         }
 
-        /* Title overlay — visible on hover (desktop) or always on touch devices */
+        /* Overlay en hover con título */
         .hover-overlay {
           position: absolute;
           inset: 0;
           background: linear-gradient(
             to top,
-            rgba(0, 0, 0, 0.92) 0%,
-            rgba(0, 0, 0, 0.18) 55%,
-            transparent 75%
+            rgba(10, 10, 15, 0.95) 0%,
+            rgba(10, 10, 15, 0.2) 50%,
+            transparent 72%
           );
           display: flex;
           flex-direction: column;
           justify-content: flex-end;
-          padding: 10px;
+          padding: 12px;
           opacity: 0;
-          transition: opacity 0.22s ease;
+          transition: opacity 0.25s ease;
           z-index: 2;
+          gap: 4px;
         }
 
         .poster-wrap:hover .hover-overlay {
           opacity: 1;
         }
 
-        /* On touch devices show title always */
+        /* Touch devices: mostrar siempre */
         @media (hover: none) {
           .hover-overlay {
             opacity: 1;
@@ -152,9 +162,11 @@ export default function Film({
         }
 
         .title {
-          color: #f0f0f5;
-          font-size: 11px;
-          font-weight: 600;
+          color: var(--text);
+          font-family: var(--font-display);
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: -0.01em;
           line-height: 1.3;
           display: -webkit-box;
           -webkit-line-clamp: 2;
@@ -162,65 +174,65 @@ export default function Film({
           overflow: hidden;
         }
 
+        .rating-inline {
+          font-family: var(--font-mono);
+          font-size: 11px;
+          color: var(--accent);
+          font-weight: 500;
+        }
+
+        /* Rating badge — siempre visible */
         .rating-badge {
           position: absolute;
           bottom: 8px;
           right: 8px;
-          background: rgba(0, 0, 0, 0.6);
-          color: #d4af37;
+          background: rgba(10, 10, 15, 0.75);
+          color: var(--accent);
+          font-family: var(--font-mono);
           font-size: 11px;
-          font-weight: 700;
+          font-weight: 600;
           padding: 3px 7px;
-          border-radius: 4px;
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
+          border-radius: var(--radius-sm);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
           z-index: 3;
-          letter-spacing: 0.02em;
+          border: 1px solid rgba(108, 99, 255, 0.2);
         }
 
-        .status-badge {
+        /* Badges superiores */
+        .badge {
           position: absolute;
           top: 8px;
           left: 8px;
-          font-size: 10px;
+          font-family: var(--font-body);
+          font-size: 9px;
           font-weight: 700;
-          padding: 3px 7px;
-          border-radius: 4px;
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
+          padding: 3px 8px;
+          border-radius: 20px;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
           z-index: 3;
-          letter-spacing: 0.01em;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
           white-space: nowrap;
         }
 
-        .status-badge.upcoming {
-          background: rgba(0, 0, 0, 0.65);
-          color: #b8c8e8;
-          border: 1px solid rgba(184, 200, 232, 0.3);
+        .badge-upcoming {
+          background: rgba(10, 10, 15, 0.75);
+          color: #a8b8d8;
+          border: 1px solid rgba(168, 184, 216, 0.25);
         }
 
-        .status-badge.theaters {
-          background: rgba(0, 0, 0, 0.65);
-          color: #f5c842;
-          border: 1px solid rgba(245, 200, 66, 0.35);
+        .badge-theaters {
+          background: rgba(10, 10, 15, 0.75);
+          color: var(--to-watch);
+          border: 1px solid rgba(255, 159, 67, 0.3);
         }
 
-        .watchlist-badge {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          background: rgba(0, 0, 0, 0.7);
-          font-size: 11px;
-          font-weight: 700;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
-          z-index: 3;
+        .badge-watchlist {
+          background: rgba(10, 10, 15, 0.75);
+          color: var(--wl-color);
+          border: 1px solid color-mix(in srgb, var(--wl-color) 35%, transparent);
         }
       `}</style>
     </div>

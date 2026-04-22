@@ -19,17 +19,17 @@ type SeriesCategory = "popular" | "airing" | "trending" | "my_platforms";
 type Category = FilmCategory | SeriesCategory;
 
 const FILM_CATEGORIES: { id: FilmCategory; label: string }[] = [
-  { id: "popular", label: "Populares en España" },
-  { id: "upcoming", label: "Próximos estrenos" },
-  { id: "trending", label: "Tendencias" },
-  { id: "my_platforms", label: "En mis plataformas" },
+  { id: "popular",     label: "Populares" },
+  { id: "upcoming",    label: "Próximos estrenos" },
+  { id: "trending",    label: "Tendencias" },
+  { id: "my_platforms", label: "Mis plataformas" },
 ];
 
 const SERIES_CATEGORIES: { id: SeriesCategory; label: string }[] = [
-  { id: "popular", label: "Populares" },
-  { id: "airing", label: "En emisión" },
-  { id: "trending", label: "Tendencias" },
-  { id: "my_platforms", label: "En mis plataformas" },
+  { id: "popular",     label: "Populares" },
+  { id: "airing",     label: "En emisión" },
+  { id: "trending",   label: "Tendencias" },
+  { id: "my_platforms", label: "Mis plataformas" },
 ];
 
 function buildUrl(
@@ -92,6 +92,7 @@ function HomeContent() {
   const [films, setFilms] = useState<film[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
   const loadingRef = useRef(false);
@@ -105,7 +106,7 @@ function HomeContent() {
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;
-    if (isMyPlatforms && (providerIdsArr.length === 0)) return;
+    if (isMyPlatforms && providerIdsArr.length === 0) return;
     loadingRef.current = true;
     setLoading(true);
     try {
@@ -140,9 +141,7 @@ function HomeContent() {
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) loadMore();
-      },
+      (entries) => { if (entries[0].isIntersecting) loadMore(); },
       { rootMargin: "300px" }
     );
     const el = sentinelRef.current;
@@ -175,66 +174,88 @@ function HomeContent() {
     <>
       <NavBar />
 
-      <div className="hero">
-        <div className="hero-search">
+      {/* ── Barra de búsqueda + tabs ─────────────── */}
+      <div className="controls">
+        {/* Search */}
+        <div className={`search-bar${searchFocused ? " focused" : ""}`}>
+          <span className="search-icon">
+            <FontAwesomeIcon icon={faMagnifyingGlass} />
+          </span>
           <input
             type="text"
             placeholder="Buscar películas y series..."
             value={searchText}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
             onKeyDown={handleSearchKey}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
             autoComplete="off"
           />
-          <button onClick={handleSearch} aria-label="Buscar">
-            <FontAwesomeIcon icon={faMagnifyingGlass} />
+          {searchText && (
+            <button className="search-clear" onClick={() => setSearchText("")} aria-label="Limpiar">
+              ✕
+            </button>
+          )}
+          <button className="search-submit" onClick={handleSearch} aria-label="Buscar">
+            Buscar
           </button>
         </div>
-      </div>
 
-      <div className="tabs-bar">
-        <div className="media-tabs">
+        {/* Tipo de media — pills */}
+        <div className="type-pills">
           <button
-            className={`media-tab${mediaType === "film" ? " active" : ""}`}
+            className={`type-pill${mediaType === "film" ? " active" : ""}`}
             onClick={() => switchMediaType("film")}
           >
             Películas
           </button>
           <button
-            className={`media-tab${mediaType === "series" ? " active" : ""}`}
+            className={`type-pill${mediaType === "series" ? " active" : ""}`}
             onClick={() => switchMediaType("series")}
           >
             Series
           </button>
         </div>
-        <div className="cat-tabs">
-          {categories.map(({ id, label }) => (
-            <button
-              key={id}
-              className={`cat-tab${category === id ? " active" : ""}${id === "my_platforms" ? " my-platforms-tab" : ""}`}
-              onClick={() => switchCategory(id)}
-            >
-              {id === "my_platforms" && <span className="tab-icon">▶</span>}
-              {label}
-            </button>
-          ))}
+
+        {/* Categorías — chips */}
+        <div className="cat-chips-wrap">
+          <div className="cat-chips">
+            {categories.map(({ id, label }) => (
+              <button
+                key={id}
+                className={`cat-chip${category === id ? " active" : ""}${id === "my_platforms" ? " chip-platforms" : ""}`}
+                onClick={() => switchCategory(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
+      {/* ── Contenido ───────────────────────────── */}
       {hasNoPlatforms ? (
         <div className="platforms-prompt">
           <div className="prompt-card">
-            <div className="prompt-icon">📺</div>
-            <h2>{!user ? "Inicia sesión" : "Configura tus plataformas"}</h2>
+            <div className="prompt-icon">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden>
+                <rect x="4" y="8" width="32" height="20" rx="3" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M13 32h14M20 28v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M12 14l5 4-5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M21 22h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </div>
+            <h2>{!user ? "Empieza a ver lo que tienes" : "¿Qué plataformas tienes?"}</h2>
             <p>
               {!user
-                ? "Inicia sesión y elige tus plataformas de streaming para ver el contenido disponible en ellas."
-                : "Selecciona las plataformas que tienes contratadas para filtrar el contenido disponible."}
+                ? "Inicia sesión, añade tus plataformas y descubre qué puedes ver esta noche."
+                : "Selecciona las plataformas que tienes y filtra solo lo que puedes ver ahora mismo."}
             </p>
             {!user ? (
-              <span className="prompt-hint">Pulsa el menú ☰ para iniciar sesión</span>
+              <span className="prompt-hint">Pulsa el menú arriba a la derecha para entrar</span>
             ) : (
               <Link href="/platforms" className="prompt-btn">
-                Gestionar plataformas
+                Configurar plataformas
               </Link>
             )}
           </div>
@@ -243,153 +264,203 @@ function HomeContent() {
         <>
           <Films films={films} loading={loading} mediaType={mediaType} />
           <div ref={sentinelRef} className="sentinel">
-            {loading && <span className="spinner" />}
+            {loading && films.length > 0 && (
+              <div className="load-more-indicator">
+                <span className="dot" />
+                <span className="dot" />
+                <span className="dot" />
+              </div>
+            )}
           </div>
         </>
       )}
 
       <style jsx>{`
-        .hero {
+        /* ── Controls área ──────────────────────── */
+        .controls {
+          padding: 24px 24px 8px;
+          max-width: 1400px;
+          margin: 0 auto;
           display: flex;
           flex-direction: column;
-          align-items: center;
-          padding: 32px 24px 24px;
+          gap: 16px;
         }
 
-        .hero-search {
+        /* ── Search bar ─────────────────────────── */
+        .search-bar {
           display: flex;
           align-items: center;
           width: 100%;
           max-width: 560px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          padding: 12px 16px;
+          background: var(--surface);
+          border: 1px solid var(--border-hover);
+          border-radius: var(--radius-lg);
+          padding: 10px 12px 10px 16px;
           gap: 10px;
-          transition: border-color 0.2s, background 0.2s;
+          transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .hero-search:focus-within {
-          border-color: rgba(255, 255, 255, 0.22);
-          background: rgba(255, 255, 255, 0.06);
+        .search-bar.focused {
+          border-color: rgba(108, 99, 255, 0.5);
+          box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
         }
 
-        .hero-search input {
+        .search-icon {
+          color: var(--text-muted);
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+          font-size: 14px;
+        }
+
+        .search-bar input {
           flex: 1;
           background: none;
           border: none;
           outline: none;
-          color: #e8e8f2;
-          font-size: 16px;
+          color: var(--text);
+          font-family: var(--font-body);
+          font-size: 15px;
           min-width: 0;
         }
 
-        .hero-search input::placeholder {
-          color: rgba(255, 255, 255, 0.25);
+        .search-bar input::placeholder {
+          color: var(--text-subtle);
         }
 
-        .hero-search button {
+        .search-clear {
           background: none;
           border: none;
-          outline: none;
+          color: var(--text-subtle);
+          font-size: 12px;
           cursor: pointer;
-          color: rgba(255, 255, 255, 0.3);
-          display: flex;
-          align-items: center;
-          padding: 0;
-          transition: color 0.2s;
+          padding: 2px 6px;
+          border-radius: var(--radius-sm);
+          transition: color 0.15s;
           flex-shrink: 0;
         }
 
-        .hero-search button:hover {
-          color: rgba(255, 255, 255, 0.6);
+        .search-clear:hover {
+          color: var(--text-muted);
         }
 
-        .hero-search button :global(svg) {
-          width: 18px;
-          height: 18px;
-          fill: currentColor;
+        .search-submit {
+          background: var(--accent-gradient);
+          border: none;
+          color: #fff;
+          font-family: var(--font-body);
+          font-size: 13px;
+          font-weight: 600;
+          padding: 7px 16px;
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          transition: opacity 0.2s, transform 0.15s;
+          flex-shrink: 0;
+          white-space: nowrap;
         }
 
-        .tabs-bar {
-          padding: 20px 24px 4px;
-          max-width: 1400px;
-          margin: 0 auto;
+        .search-submit:hover {
+          opacity: 0.9;
         }
 
-        .media-tabs {
+        .search-submit:active {
+          transform: scale(0.97);
+        }
+
+        /* ── Type pills ─────────────────────────── */
+        .type-pills {
           display: flex;
-          gap: 4px;
-          margin-bottom: 14px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          gap: 6px;
+          border-bottom: 1px solid var(--border);
+          padding-bottom: 0;
         }
 
-        .media-tab {
+        .type-pill {
           background: none;
           border: none;
           border-bottom: 2px solid transparent;
-          font-size: 17px;
+          font-family: var(--font-display);
+          font-size: 18px;
           font-weight: 700;
+          letter-spacing: -0.01em;
           cursor: pointer;
-          padding: 6px 18px 10px;
+          padding: 4px 4px 12px;
           margin-bottom: -1px;
           transition: color 0.18s, border-color 0.18s;
-          color: #8888aa;
+          color: var(--text-muted);
         }
 
-        .media-tab.active {
-          color: #f0f0f8;
-          border-bottom-color: #d4af37;
+        .type-pill.active {
+          color: var(--text);
+          border-bottom-color: var(--accent);
         }
 
-        .cat-tabs {
+        .type-pill:hover:not(.active) {
+          color: var(--text);
+        }
+
+        /* ── Category chips ─────────────────────── */
+        .cat-chips-wrap {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          margin: 0 -24px;
+          padding: 0 24px;
+        }
+
+        .cat-chips-wrap::-webkit-scrollbar {
+          display: none;
+        }
+
+        .cat-chips {
           display: flex;
           gap: 8px;
-          flex-wrap: wrap;
           padding-bottom: 4px;
+          white-space: nowrap;
+          min-width: max-content;
         }
 
-        .cat-tab {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          color: #8888aa;
-          font-size: 12px;
-          font-weight: 600;
+        .cat-chip {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          color: var(--text-muted);
+          font-family: var(--font-body);
+          font-size: 13px;
+          font-weight: 500;
           cursor: pointer;
-          padding: 5px 14px;
+          padding: 7px 16px;
           border-radius: 20px;
           transition: all 0.18s;
+          white-space: nowrap;
         }
 
-        .cat-tab.active {
-          background: rgba(212, 175, 55, 0.14);
-          border-color: rgba(212, 175, 55, 0.38);
-          color: #d4af37;
+        .cat-chip:hover:not(.active) {
+          border-color: var(--border-hover);
+          color: var(--text);
+          background: var(--surface-hover);
         }
 
-        .my-platforms-tab {
-          border-color: rgba(99, 179, 237, 0.2);
-          color: #7ab8e0;
+        .cat-chip.active {
+          background: rgba(108, 99, 255, 0.12);
+          border-color: rgba(108, 99, 255, 0.4);
+          color: var(--accent);
         }
 
-        .my-platforms-tab.active {
-          background: rgba(99, 179, 237, 0.12);
-          border-color: rgba(99, 179, 237, 0.45);
-          color: #63b3ed;
+        .chip-platforms {
+          border-color: rgba(108, 99, 255, 0.2);
         }
 
-        .tab-icon {
-          font-size: 9px;
+        .chip-platforms.active {
+          background: rgba(108, 99, 255, 0.15);
+          border-color: rgba(108, 99, 255, 0.5);
+          color: var(--accent);
         }
 
-        /* Platforms prompt */
+        /* ── Platforms prompt ───────────────────── */
         .platforms-prompt {
           display: flex;
           justify-content: center;
-          padding: 60px 24px;
+          padding: 64px 24px;
         }
 
         .prompt-card {
@@ -397,97 +468,110 @@ function HomeContent() {
           flex-direction: column;
           align-items: center;
           text-align: center;
-          gap: 14px;
-          max-width: 380px;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.07);
-          border-radius: 16px;
-          padding: 40px 32px;
+          gap: 16px;
+          max-width: 360px;
+          background: var(--surface);
+          border: 1px solid var(--border-hover);
+          border-radius: var(--radius-xl);
+          padding: 48px 32px;
+          animation: fadeInUp 0.3s ease;
         }
 
         .prompt-icon {
-          font-size: 40px;
-          line-height: 1;
+          color: var(--text-muted);
+          opacity: 0.6;
         }
 
         .prompt-card h2 {
-          font-size: 1.1rem;
+          font-family: var(--font-display);
+          font-size: 1.15rem;
           font-weight: 700;
-          color: #e8e8f2;
-          margin: 0;
+          color: var(--text);
+          letter-spacing: -0.01em;
         }
 
         .prompt-card p {
-          color: #8888aa;
+          color: var(--text-muted);
           font-size: 14px;
-          line-height: 1.6;
-          margin: 0;
+          line-height: 1.65;
         }
 
         .prompt-hint {
-          color: #6666888;
+          color: var(--text-subtle);
           font-size: 13px;
-          margin-top: 4px;
         }
 
         :global(.prompt-btn) {
           display: inline-block;
-          margin-top: 4px;
-          padding: 10px 24px;
-          background: rgba(212, 175, 55, 0.12);
-          border: 1px solid rgba(212, 175, 55, 0.35);
-          border-radius: 8px;
-          color: #d4af37;
-          font-size: 13px;
+          padding: 11px 24px;
+          background: var(--accent-gradient);
+          border-radius: var(--radius-md);
+          color: #fff;
+          font-family: var(--font-body);
+          font-size: 14px;
           font-weight: 600;
           text-decoration: none;
-          transition: background 0.18s, border-color 0.18s;
+          transition: opacity 0.2s, transform 0.15s;
         }
 
         :global(.prompt-btn:hover) {
-          background: rgba(212, 175, 55, 0.2);
-          border-color: rgba(212, 175, 55, 0.55);
+          opacity: 0.9;
         }
 
+        :global(.prompt-btn:active) {
+          transform: scale(0.98);
+        }
+
+        /* ── Sentinel / load more ───────────────── */
         .sentinel {
-          height: 72px;
+          height: 80px;
           display: flex;
           align-items: center;
           justify-content: center;
         }
 
-        .spinner {
-          display: inline-block;
-          width: 28px;
-          height: 28px;
-          border: 3px solid rgba(212, 175, 55, 0.18);
-          border-top-color: #d4af37;
+        .load-more-indicator {
+          display: flex;
+          gap: 6px;
+          align-items: center;
+        }
+
+        .dot {
+          width: 6px;
+          height: 6px;
+          background: var(--accent);
           border-radius: 50%;
-          animation: spin 0.8s linear infinite;
+          opacity: 0.4;
+          animation: dotPulse 1.2s ease-in-out infinite;
         }
 
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotPulse {
+          0%, 100% { opacity: 0.2; transform: scale(0.8); }
+          50% { opacity: 0.8; transform: scale(1); }
         }
 
+        /* ── Mobile ─────────────────────────────── */
         @media (max-width: 480px) {
-          .hero {
-            padding: 20px 12px 16px;
+          .controls {
+            padding: 16px 14px 8px;
+            gap: 12px;
           }
-          .hero-search {
-            padding: 10px 14px;
+          .search-bar {
+            padding: 9px 10px 9px 14px;
           }
-          .hero-search input {
-            font-size: 15px;
+          .search-submit {
+            padding: 6px 12px;
           }
-          .tabs-bar {
-            padding: 14px 12px 4px;
+          .type-pill {
+            font-size: 16px;
+            padding: 4px 2px 10px;
           }
-          .media-tab {
-            font-size: 15px;
-            padding: 5px 12px 8px;
+          .cat-chips-wrap {
+            margin: 0 -14px;
+            padding: 0 14px;
           }
         }
       `}</style>

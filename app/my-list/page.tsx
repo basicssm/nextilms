@@ -10,17 +10,40 @@ import { useAuth } from "@/context/AuthContext";
 import { useFullWatchlist } from "@/hooks/useWatchlist";
 import { WatchlistItem, WatchlistStatus } from "@/types";
 
-const STATUS_CONFIG: Record<WatchlistStatus, { label: string; icon: string; color: string }> = {
-  watching: { label: "Viendo ahora", icon: "▶", color: "#3b82f6" },
-  to_watch: { label: "Quiero ver", icon: "🔖", color: "#8b5cf6" },
-  watched: { label: "Ya vistas", icon: "✓", color: "#22c55e" },
+const STATUS_CONFIG: Record<WatchlistStatus, {
+  label: string;
+  icon: string;
+  colorVar: string;
+  bgVar: string;
+  borderVar: string;
+}> = {
+  watching: {
+    label: "Viendo",
+    icon: "▶",
+    colorVar: "var(--watching)",
+    bgVar: "var(--watching-bg)",
+    borderVar: "var(--watching-border)",
+  },
+  to_watch: {
+    label: "Por ver",
+    icon: "◷",
+    colorVar: "var(--to-watch)",
+    bgVar: "var(--to-watch-bg)",
+    borderVar: "var(--to-watch-border)",
+  },
+  watched: {
+    label: "Vista",
+    icon: "✓",
+    colorVar: "var(--watched)",
+    bgVar: "var(--watched-bg)",
+    borderVar: "var(--watched-border)",
+  },
 };
 
-type StatusFilter = "all" | WatchlistStatus;
 type TypeFilter = "all" | "film" | "series";
 type SortOrder = "recent" | "alpha";
 
-function FilmCard({
+function KanbanCard({
   item,
   onRemove,
   onChangeStatus,
@@ -30,141 +53,189 @@ function FilmCard({
   onChangeStatus: (status: WatchlistStatus) => void;
 }) {
   const poster = item.poster_path
-    ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
-    : `https://picsum.photos/seed/${item.film_id}/120/180`;
+    ? `https://image.tmdb.org/t/p/w342${item.poster_path}`
+    : `https://picsum.photos/seed/${item.film_id}/200/300`;
+
+  const href = item.media_type === "series"
+    ? `/series/${item.film_id}`
+    : `/film/${item.film_id}`;
 
   const otherStatuses = (Object.keys(STATUS_CONFIG) as WatchlistStatus[]).filter(
     (s) => s !== item.status
   );
 
-  const href = item.media_type === "series" ? `/series/${item.film_id}` : `/film/${item.film_id}`;
-
   return (
-    <div className="card">
-      <Link href={href} className="card-img-link">
-        <Image
-          src={poster}
-          alt={item.film_title}
-          width={120}
-          height={180}
-          style={{ borderRadius: 8, display: "block" }}
-        />
-      </Link>
-      <p className="card-title">{item.film_title}</p>
-      {item.media_type === "series" && (
-        <span className="type-chip">Serie</span>
-      )}
-
-      <div className="card-actions">
-        <div className="status-change">
-          {otherStatuses.map((s) => (
-            <button
-              key={s}
-              className="move-btn"
-              onClick={() => onChangeStatus(s)}
-              title={`Mover a "${STATUS_CONFIG[s].label}"`}
-            >
-              {STATUS_CONFIG[s].icon}
-            </button>
-          ))}
+    <div className="kcard">
+      <Link href={href} className="kcard-poster-link">
+        <div className="kcard-poster-wrap">
+          <Image
+            src={poster}
+            alt={item.film_title}
+            fill
+            sizes="80px"
+            style={{ objectFit: "cover" }}
+          />
         </div>
-        <button
-          className="remove-btn"
-          onClick={onRemove}
-          title="Quitar de la lista"
-          aria-label="Quitar"
-        >
-          ✕
-        </button>
+      </Link>
+
+      <div className="kcard-body">
+        <Link href={href} className="kcard-title-link">
+          <p className="kcard-title">{item.film_title}</p>
+        </Link>
+        {item.media_type === "series" && (
+          <span className="kcard-type">Serie</span>
+        )}
+        <div className="kcard-actions">
+          {otherStatuses.map((s) => {
+            const cfg = STATUS_CONFIG[s];
+            return (
+              <button
+                key={s}
+                className="move-btn"
+                onClick={() => onChangeStatus(s)}
+                title={`Mover a "${cfg.label}"`}
+                style={{
+                  "--move-color": cfg.colorVar,
+                  "--move-bg": cfg.bgVar,
+                  "--move-border": cfg.borderVar,
+                } as React.CSSProperties}
+              >
+                <span>{cfg.icon}</span>
+                <span className="move-label">{cfg.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
+      <button
+        className="kcard-remove"
+        onClick={onRemove}
+        title="Quitar de la lista"
+        aria-label="Quitar"
+      >
+        ✕
+      </button>
+
       <style jsx>{`
-        .card {
-          width: 120px;
+        .kcard {
+          display: flex;
+          gap: 12px;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-md);
+          padding: 10px;
+          align-items: flex-start;
+          position: relative;
+          transition: border-color 0.15s, background 0.15s;
+          animation: fadeInUp 0.25s ease;
+        }
+        .kcard:hover {
+          border-color: var(--border-hover);
+          background: var(--surface);
+        }
+        :global(.kcard-poster-link) {
           flex-shrink: 0;
+          display: block;
+        }
+        .kcard-poster-wrap {
+          position: relative;
+          width: 52px;
+          height: 78px;
+          border-radius: var(--radius-sm);
+          overflow: hidden;
+          background: var(--surface);
+          flex-shrink: 0;
+        }
+        .kcard-body {
+          flex: 1;
+          min-width: 0;
           display: flex;
           flex-direction: column;
           gap: 6px;
+          padding-right: 20px;
         }
-        :global(.card-img-link) {
-          display: block;
-          transition: opacity 0.15s;
+        :global(.kcard-title-link) {
+          text-decoration: none;
         }
-        :global(.card-img-link:hover) {
-          opacity: 0.85;
-        }
-        .card-title {
-          color: #a8a8c0;
-          font-size: 11px;
-          line-height: 1.3;
-          text-align: center;
+        .kcard-title {
+          font-family: var(--font-body);
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--text);
+          line-height: 1.35;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
-        .type-chip {
-          align-self: center;
-          background: rgba(212, 175, 55, 0.08);
-          border: 1px solid rgba(212, 175, 55, 0.2);
-          color: #d4af37;
+        :global(.kcard-title-link:hover) .kcard-title {
+          color: var(--accent);
+        }
+        .kcard-type {
+          align-self: flex-start;
+          background: rgba(108, 99, 255, 0.08);
+          border: 1px solid rgba(108, 99, 255, 0.2);
+          color: var(--accent);
           font-size: 9px;
-          font-weight: 600;
-          padding: 1px 7px;
+          font-weight: 700;
+          padding: 2px 7px;
           border-radius: 10px;
-          letter-spacing: 0.04em;
+          letter-spacing: 0.05em;
           text-transform: uppercase;
         }
-        .card-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 2px;
-        }
-        .status-change {
+        .kcard-actions {
           display: flex;
           gap: 4px;
+          flex-wrap: wrap;
         }
         .move-btn {
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          color: #8888aa;
-          font-size: 12px;
-          width: 30px;
-          height: 30px;
-          border-radius: 5px;
-          cursor: pointer;
           display: flex;
           align-items: center;
-          justify-content: center;
+          gap: 4px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          color: var(--text-muted);
+          font-family: var(--font-body);
+          font-size: 11px;
+          font-weight: 500;
+          padding: 3px 8px;
+          border-radius: 20px;
+          cursor: pointer;
           transition: all 0.15s;
         }
         .move-btn:hover {
-          background: rgba(212, 175, 55, 0.12);
-          border-color: rgba(212, 175, 55, 0.3);
-          color: #d4af37;
+          background: var(--move-bg);
+          border-color: var(--move-border);
+          color: var(--move-color);
         }
-        .remove-btn {
+        .move-label {
+          font-size: 10px;
+        }
+        .kcard-remove {
+          position: absolute;
+          top: 8px;
+          right: 8px;
           background: none;
           border: none;
-          color: #44446a;
-          font-size: 13px;
+          color: var(--text-subtle);
+          font-size: 11px;
           cursor: pointer;
-          padding: 6px 8px;
-          min-height: 30px;
-          border-radius: 4px;
-          transition: all 0.15s;
+          padding: 4px;
+          border-radius: var(--radius-sm);
+          transition: color 0.15s, background 0.15s;
+          line-height: 1;
         }
-        .remove-btn:hover {
-          color: #e05b5b;
-          background: rgba(224, 91, 91, 0.08);
+        .kcard-remove:hover {
+          color: #ff6584;
+          background: rgba(255, 101, 132, 0.1);
         }
       `}</style>
     </div>
   );
 }
 
-function Section({
+function KanbanColumn({
   status,
   items,
   onRemove,
@@ -176,87 +247,111 @@ function Section({
   onChangeStatus: (id: string, status: WatchlistStatus) => void;
 }) {
   const cfg = STATUS_CONFIG[status];
-  if (items.length === 0) return null;
 
   return (
-    <section className="section">
-      <h2 className="section-title">
-        <span className="section-icon" style={{ color: cfg.color }}>
-          {cfg.icon}
-        </span>
-        {cfg.label}
-        <span className="section-count">{items.length}</span>
-      </h2>
-      <div className="section-grid">
-        {items.map((item) => (
-          <FilmCard
-            key={item.id}
-            item={item}
-            onRemove={() => onRemove(item.id)}
-            onChangeStatus={(s) => onChangeStatus(item.id, s)}
-          />
-        ))}
+    <div
+      className="column"
+      style={{
+        "--col-color": cfg.colorVar,
+        "--col-bg": cfg.bgVar,
+        "--col-border": cfg.borderVar,
+      } as React.CSSProperties}
+    >
+      <div className="col-header">
+        <span className="col-icon">{cfg.icon}</span>
+        <span className="col-label">{cfg.label}</span>
+        <span className="col-count">{items.length}</span>
+      </div>
+
+      <div className="col-body">
+        {items.length === 0 ? (
+          <div className="col-empty">
+            <span>Nada aquí todavía</span>
+          </div>
+        ) : (
+          items.map((item) => (
+            <KanbanCard
+              key={item.id}
+              item={item}
+              onRemove={() => onRemove(item.id)}
+              onChangeStatus={(s) => onChangeStatus(item.id, s)}
+            />
+          ))
+        )}
       </div>
 
       <style jsx>{`
-        .section {
-          margin-bottom: 52px;
-        }
-        .section-title {
+        .column {
+          flex: 1;
+          min-width: 280px;
           display: flex;
-          align-items: center;
-          gap: 10px;
-          color: #e8e8f2;
-          font-size: 1.05rem;
-          font-weight: 600;
-          margin-bottom: 20px;
-          padding-bottom: 10px;
-          border-bottom: 1px solid rgba(212, 175, 55, 0.1);
-        }
-        .section-icon {
-          font-size: 0.95rem;
-        }
-        .section-count {
-          margin-left: auto;
-          background: rgba(212, 175, 55, 0.1);
-          color: #d4af37;
-          font-size: 12px;
-          padding: 2px 10px;
-          border-radius: 20px;
-          font-weight: 500;
-        }
-        .section-grid {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 20px;
+          flex-direction: column;
+          gap: 0;
+          background: var(--bg-secondary);
+          border-radius: var(--radius-lg);
+          border: 1px solid var(--border);
+          overflow: hidden;
         }
 
-        @media (max-width: 768px) {
-          .section {
-            margin-bottom: 36px;
-          }
-          .section-grid {
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 12px;
-            gap: 14px;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
-          }
-          .section-grid::-webkit-scrollbar {
-            height: 4px;
-          }
-          .section-grid::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          .section-grid::-webkit-scrollbar-thumb {
-            background: rgba(212, 175, 55, 0.2);
-            border-radius: 2px;
-          }
+        .col-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 16px 16px 14px;
+          border-bottom: 1px solid var(--border);
+          background: var(--col-bg);
+        }
+
+        .col-icon {
+          font-size: 13px;
+          color: var(--col-color);
+        }
+
+        .col-label {
+          font-family: var(--font-display);
+          font-size: 15px;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          color: var(--col-color);
+          flex: 1;
+        }
+
+        .col-count {
+          background: var(--col-bg);
+          border: 1px solid var(--col-border);
+          color: var(--col-color);
+          font-family: var(--font-mono);
+          font-size: 11px;
+          font-weight: 600;
+          padding: 2px 8px;
+          border-radius: 20px;
+        }
+
+        .col-body {
+          flex: 1;
+          padding: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          overflow-y: auto;
+          min-height: 120px;
+          max-height: calc(100vh - 280px);
+        }
+
+        .col-empty {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 32px 16px;
+          color: var(--text-subtle);
+          font-size: 13px;
+          text-align: center;
+          border: 1px dashed var(--border);
+          border-radius: var(--radius-md);
+          margin: 4px 0;
         }
       `}</style>
-    </section>
+    </div>
   );
 }
 
@@ -265,9 +360,9 @@ export default function MyListPage() {
   const router = useRouter();
   const { items, loading, removeItem, changeStatus } = useFullWatchlist();
 
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("recent");
+  const [mobileTab, setMobileTab] = useState<WatchlistStatus>("watching");
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/");
@@ -275,28 +370,37 @@ export default function MyListPage() {
 
   if (authLoading) {
     return (
-      <div className="spinner-page">
-        <div className="spinner" />
+      <div className="loading-page">
+        <div className="loading-dots">
+          <span className="ld" />
+          <span className="ld" />
+          <span className="ld" />
+        </div>
         <style jsx>{`
-          .spinner-page {
+          .loading-page {
             min-height: 100vh;
-            background: #080810;
+            background: var(--bg);
             display: flex;
             align-items: center;
             justify-content: center;
           }
-          .spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid rgba(212, 175, 55, 0.15);
-            border-top-color: #d4af37;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+          .loading-dots {
+            display: flex;
+            gap: 8px;
           }
-          @keyframes spin {
-            to {
-              transform: rotate(360deg);
-            }
+          .ld {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: dotPulse 1.2s ease infinite;
+            opacity: 0.3;
+          }
+          .ld:nth-child(2) { animation-delay: 0.2s; }
+          .ld:nth-child(3) { animation-delay: 0.4s; }
+          @keyframes dotPulse {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 0.8; transform: scale(1); }
           }
         `}</style>
       </div>
@@ -306,11 +410,9 @@ export default function MyListPage() {
   if (!user) return null;
 
   const filtered = items
-    .filter((i: WatchlistItem) => statusFilter === "all" || i.status === statusFilter)
     .filter((i: WatchlistItem) => {
       if (typeFilter === "all") return true;
-      const t = i.media_type ?? "film";
-      return t === typeFilter;
+      return (i.media_type ?? "film") === typeFilter;
     })
     .sort((a: WatchlistItem, b: WatchlistItem) => {
       if (sortOrder === "alpha") return a.film_title.localeCompare(b.film_title, "es");
@@ -318,11 +420,7 @@ export default function MyListPage() {
     });
 
   const total = items.length;
-  const filteredTotal = filtered.length;
-
   const byStatus = (s: WatchlistStatus) => filtered.filter((i: WatchlistItem) => i.status === s);
-
-  const hasActiveFilter = statusFilter !== "all" || typeFilter !== "all";
 
   return (
     <>
@@ -331,231 +429,341 @@ export default function MyListPage() {
       </NavBar>
 
       <div className="page">
+        {/* Header */}
         <div className="page-header">
-          <h1 className="page-title">Mi Lista</h1>
+          <div className="header-top">
+            <h1 className="page-title">Mi Lista</h1>
+            {total > 0 && (
+              <span className="total-badge">{total} {total === 1 ? "título" : "títulos"}</span>
+            )}
+          </div>
+
+          {/* Filtros */}
           {total > 0 && (
-            <span className="total-badge">
-              {filteredTotal !== total ? `${filteredTotal} / ` : ""}{total}{" "}
-              {total === 1 ? "título" : "títulos"}
-            </span>
+            <div className="filters">
+              <div className="filter-group">
+                {([
+                  { id: "all",    label: "Todo" },
+                  { id: "film",   label: "Películas" },
+                  { id: "series", label: "Series" },
+                ] as { id: TypeFilter; label: string }[]).map(({ id, label }) => (
+                  <button
+                    key={id}
+                    className={`filter-chip${typeFilter === id ? " active" : ""}`}
+                    onClick={() => setTypeFilter(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="filter-group sort-group">
+                <button
+                  className={`filter-chip${sortOrder === "recent" ? " active" : ""}`}
+                  onClick={() => setSortOrder("recent")}
+                >
+                  Recientes
+                </button>
+                <button
+                  className={`filter-chip${sortOrder === "alpha" ? " active" : ""}`}
+                  onClick={() => setSortOrder("alpha")}
+                >
+                  A–Z
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
-        {total > 0 && (
-          <div className="filters-bar">
-            <div className="filter-group">
-              {(["all", "watching", "to_watch", "watched"] as StatusFilter[]).map((s) => (
-                <button
-                  key={s}
-                  className={`filter-btn${statusFilter === s ? " active" : ""}`}
-                  onClick={() => setStatusFilter(s)}
-                >
-                  {s === "all"
-                    ? "Todos"
-                    : `${STATUS_CONFIG[s as WatchlistStatus].icon} ${STATUS_CONFIG[s as WatchlistStatus].label}`}
-                </button>
-              ))}
-            </div>
-
-            <div className="filter-group">
-              {([
-                { id: "all", label: "Todo" },
-                { id: "film", label: "🎬 Películas" },
-                { id: "series", label: "📺 Series" },
-              ] as { id: TypeFilter; label: string }[]).map(({ id, label }) => (
-                <button
-                  key={id}
-                  className={`filter-btn type-btn${typeFilter === id ? " active" : ""}`}
-                  onClick={() => setTypeFilter(id)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <div className="filter-group sort-group">
-              <button
-                className={`filter-btn${sortOrder === "recent" ? " active" : ""}`}
-                onClick={() => setSortOrder("recent")}
-                title="Ordenar por fecha"
-              >
-                🕐 Recientes
-              </button>
-              <button
-                className={`filter-btn${sortOrder === "alpha" ? " active" : ""}`}
-                onClick={() => setSortOrder("alpha")}
-                title="Ordenar alfabéticamente"
-              >
-                A–Z
-              </button>
-            </div>
-          </div>
-        )}
-
         {loading ? (
-          <div className="loading-text">Cargando tu lista...</div>
+          <div className="loading-state">Cargando tu lista...</div>
         ) : total === 0 ? (
-          <div className="empty">
-            <p>Tu lista está vacía.</p>
-            <Link href="/" className="browse-link">
-              Explorar películas →
-            </Link>
+          <div className="empty-state">
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden>
+              <circle cx="28" cy="28" r="24" stroke="currentColor" strokeWidth="1.5" strokeDasharray="5 4" opacity="0.2" />
+              <path d="M20 28h16M28 20v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.25" />
+            </svg>
+            <p className="empty-title">Tu lista está más vacía que un lunes</p>
+            <p className="empty-sub">Añade películas o series que quieras ver y organízalas aquí</p>
+            <Link href="/" className="empty-cta">Explorar contenido →</Link>
           </div>
-        ) : filteredTotal === 0 ? (
-          <div className="empty">
-            <p>No hay títulos con estos filtros.</p>
-            {hasActiveFilter && (
-              <button
-                className="reset-btn"
-                onClick={() => { setStatusFilter("all"); setTypeFilter("all"); }}
-              >
-                Quitar filtros
-              </button>
-            )}
-          </div>
-        ) : statusFilter !== "all" ? (
-          <Section
-            status={statusFilter}
-            items={filtered}
-            onRemove={removeItem}
-            onChangeStatus={changeStatus}
-          />
         ) : (
           <>
-            <Section
-              status="watching"
-              items={byStatus("watching")}
-              onRemove={removeItem}
-              onChangeStatus={changeStatus}
-            />
-            <Section
-              status="to_watch"
-              items={byStatus("to_watch")}
-              onRemove={removeItem}
-              onChangeStatus={changeStatus}
-            />
-            <Section
-              status="watched"
-              items={byStatus("watched")}
-              onRemove={removeItem}
-              onChangeStatus={changeStatus}
-            />
+            {/* Kanban desktop */}
+            <div className="kanban">
+              {(["watching", "to_watch", "watched"] as WatchlistStatus[]).map((s) => (
+                <KanbanColumn
+                  key={s}
+                  status={s}
+                  items={byStatus(s)}
+                  onRemove={removeItem}
+                  onChangeStatus={changeStatus}
+                />
+              ))}
+            </div>
+
+            {/* Mobile: tabs + columna activa */}
+            <div className="mobile-view">
+              <div className="mobile-tabs">
+                {(["watching", "to_watch", "watched"] as WatchlistStatus[]).map((s) => {
+                  const cfg = STATUS_CONFIG[s];
+                  const count = byStatus(s).length;
+                  return (
+                    <button
+                      key={s}
+                      className={`mobile-tab${mobileTab === s ? " active" : ""}`}
+                      onClick={() => setMobileTab(s)}
+                      style={{
+                        "--tab-color": cfg.colorVar,
+                        "--tab-bg": cfg.bgVar,
+                        "--tab-border": cfg.borderVar,
+                      } as React.CSSProperties}
+                    >
+                      {cfg.icon} {cfg.label}
+                      {count > 0 && <span className="tab-count">{count}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mobile-list">
+                {byStatus(mobileTab).length === 0 ? (
+                  <div className="mobile-empty">Nada aquí todavía</div>
+                ) : (
+                  byStatus(mobileTab).map((item) => (
+                    <KanbanCard
+                      key={item.id}
+                      item={item}
+                      onRemove={() => removeItem(item.id)}
+                      onChangeStatus={(s) => changeStatus(item.id, s)}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
           </>
         )}
       </div>
 
       <style jsx>{`
         .page {
-          max-width: 1100px;
+          max-width: 1200px;
           margin: 0 auto;
-          padding: 40px 24px 80px;
+          padding: 40px 32px 96px;
           min-height: 100vh;
-          background: #080810;
         }
+
+        /* Header */
         .page-header {
+          margin-bottom: 32px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .header-top {
           display: flex;
           align-items: baseline;
-          gap: 16px;
-          margin-bottom: 28px;
+          gap: 14px;
         }
+
         .page-title {
-          color: #e8e8f2;
-          font-size: 1.8rem;
-          font-weight: 800;
+          font-family: var(--font-display);
+          font-size: 2rem;
+          font-weight: 700;
+          letter-spacing: -0.02em;
+          color: var(--text);
         }
+
         .total-badge {
-          color: #8888aa;
-          font-size: 14px;
+          font-family: var(--font-mono);
+          color: var(--text-muted);
+          font-size: 13px;
         }
-        .filters-bar {
+
+        /* Filtros */
+        .filters {
           display: flex;
-          flex-wrap: wrap;
+          align-items: center;
           gap: 12px;
-          margin-bottom: 36px;
-          padding-bottom: 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          flex-wrap: wrap;
         }
+
         .filter-group {
           display: flex;
           gap: 6px;
-          flex-wrap: wrap;
         }
+
         .sort-group {
           margin-left: auto;
         }
-        .filter-btn {
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          color: #8888aa;
+
+        .filter-chip {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          color: var(--text-muted);
+          font-family: var(--font-body);
           font-size: 12px;
           font-weight: 500;
-          padding: 5px 13px;
+          padding: 6px 14px;
           border-radius: 20px;
           cursor: pointer;
           transition: all 0.15s;
           white-space: nowrap;
         }
-        .filter-btn:hover {
-          border-color: rgba(212, 175, 55, 0.25);
-          color: #c8c8e0;
+
+        .filter-chip:hover {
+          border-color: var(--border-hover);
+          color: var(--text);
+          background: var(--surface-hover);
         }
-        .filter-btn.active {
-          background: rgba(212, 175, 55, 0.13);
-          border-color: rgba(212, 175, 55, 0.4);
-          color: #d4af37;
+
+        .filter-chip.active {
+          background: rgba(108, 99, 255, 0.1);
+          border-color: rgba(108, 99, 255, 0.35);
+          color: var(--accent);
         }
-        .loading-text {
-          color: #8888aa;
+
+        /* Kanban (desktop) */
+        .kanban {
+          display: flex;
+          gap: 16px;
+          align-items: flex-start;
+        }
+
+        /* Mobile view */
+        .mobile-view {
+          display: none;
+        }
+
+        .mobile-tabs {
+          display: flex;
+          gap: 6px;
+          margin-bottom: 16px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          padding-bottom: 2px;
+        }
+
+        .mobile-tabs::-webkit-scrollbar {
+          display: none;
+        }
+
+        .mobile-tab {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          color: var(--text-muted);
+          font-family: var(--font-body);
+          font-size: 13px;
+          font-weight: 500;
+          padding: 8px 16px;
+          border-radius: 20px;
+          cursor: pointer;
+          transition: all 0.18s;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        .mobile-tab.active {
+          background: var(--tab-bg);
+          border-color: var(--tab-border);
+          color: var(--tab-color);
+        }
+
+        .tab-count {
+          background: currentColor;
+          color: var(--bg);
+          font-family: var(--font-mono);
+          font-size: 10px;
+          font-weight: 700;
+          padding: 1px 5px;
+          border-radius: 10px;
+          opacity: 0.85;
+        }
+
+        .mobile-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .mobile-empty {
+          text-align: center;
+          color: var(--text-subtle);
+          font-size: 13px;
+          padding: 40px 0;
+        }
+
+        /* States */
+        .loading-state {
+          color: var(--text-muted);
           font-size: 14px;
           text-align: center;
-          padding: 60px 0;
-        }
-        .empty {
-          text-align: center;
-          color: #8888aa;
           padding: 80px 0;
-          font-size: 15px;
+        }
+
+        .empty-state {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 16px;
+          gap: 12px;
+          padding: 80px 0;
+          text-align: center;
+          color: var(--text-muted);
         }
-        :global(.browse-link) {
-          display: inline-block;
-          color: #d4af37;
-          text-decoration: none;
+
+        .empty-title {
+          font-family: var(--font-display);
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: var(--text-muted);
+          letter-spacing: -0.01em;
+          margin-top: 4px;
+        }
+
+        .empty-sub {
           font-size: 14px;
+          color: var(--text-subtle);
+          max-width: 320px;
+          line-height: 1.6;
         }
-        :global(.browse-link:hover) {
-          text-decoration: underline;
+
+        :global(.empty-cta) {
+          display: inline-block;
+          margin-top: 8px;
+          color: var(--accent);
+          font-size: 14px;
+          font-weight: 500;
+          text-decoration: none;
+          transition: opacity 0.15s;
         }
-        .reset-btn {
-          background: none;
-          border: 1px solid rgba(212, 175, 55, 0.3);
-          color: #d4af37;
-          font-size: 13px;
-          padding: 7px 18px;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all 0.15s;
+
+        :global(.empty-cta:hover) {
+          opacity: 0.8;
         }
-        .reset-btn:hover {
-          background: rgba(212, 175, 55, 0.1);
+
+        /* Responsive */
+        @media (max-width: 900px) {
+          .kanban {
+            display: none;
+          }
+          .mobile-view {
+            display: block;
+          }
         }
 
         @media (max-width: 480px) {
           .page {
-            padding: 24px 14px 60px;
-          }
-          .page-header {
-            margin-bottom: 20px;
+            padding: 24px 14px 72px;
           }
           .page-title {
-            font-size: 1.4rem;
+            font-size: 1.6rem;
           }
-          .filters-bar {
+          .filters {
             gap: 8px;
-            margin-bottom: 24px;
           }
           .sort-group {
             margin-left: 0;
