@@ -87,11 +87,9 @@ export default function PlatformsPage() {
           <Image
             src={`${LOGO_BASE}${p.logo_path}`}
             alt={p.provider_name}
-            width={60}
-            height={60}
-            className="logo"
+            fill
+            style={{ objectFit: "cover" }}
           />
-          {busy && <div className="busy-overlay"><span className="mini-spinner" /></div>}
         </div>
         <span className="name">{p.provider_name}</span>
         {selected && (
@@ -165,77 +163,13 @@ export default function PlatformsPage() {
           max-width: 960px;
           margin: 0 auto;
           padding: 32px 24px 64px;
-          animation: fadeInUp 0.3s ease both;
-        }
-
-        .header {
-          margin-bottom: 32px;
-        }
-
-        h1 {
-          font-size: 1.8rem;
-          font-weight: 800;
-          font-family: var(--font-display);
-          color: var(--text);
-          margin-bottom: 10px;
-          letter-spacing: -0.02em;
-        }
-
-        .subtitle {
-          color: var(--text-muted);
-          font-size: 14px;
-          line-height: 1.6;
-          max-width: 520px;
-        }
-
-        .auth-prompt {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          background: rgba(108, 99, 255, 0.07);
-          border: 1px solid rgba(108, 99, 255, 0.2);
-          border-radius: var(--radius-md);
-          padding: 18px 22px;
-          margin-bottom: 28px;
-          color: var(--accent);
-          font-size: 14px;
-        }
-
-        .auth-icon {
-          font-size: 20px;
-        }
-
-        .selected-count {
-          color: var(--text-muted);
-          font-size: 13px;
-          margin-bottom: 24px;
-          font-family: var(--font-mono);
-        }
-
-        .loading-wrap {
-          display: flex;
-          justify-content: center;
-          padding: 60px 0;
-        }
-
-        .section {
-          margin-bottom: 40px;
-        }
-
-        .section-title {
-          font-size: 13px;
-          font-weight: 600;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: var(--text-muted);
-          margin-bottom: 16px;
-          font-family: var(--font-mono);
         }
 
         .grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
           gap: 12px;
+          margin-bottom: 40px;
         }
 
         .card {
@@ -243,124 +177,54 @@ export default function PlatformsPage() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 10px;
-          padding: 18px 8px 14px;
+          gap: 8px;
+          padding: 10px 8px 12px;
           background: var(--surface);
-          border: 2px solid rgba(255, 255, 255, 0.06);
-          border-radius: var(--radius-md);
+          border: 2px solid transparent;
+          border-radius: 12px;
           cursor: pointer;
-          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
           text-align: center;
         }
 
-        .card:hover:not(.disabled) {
-          border-color: rgba(255, 255, 255, 0.14);
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-        }
-
         .card.selected {
-          border-color: rgba(108, 99, 255, 0.7);
-          box-shadow: 0 0 20px rgba(108, 99, 255, 0.18);
-        }
-
-        .card.selected:hover {
-          border-color: #6c63ff;
-          box-shadow: 0 6px 28px rgba(108, 99, 255, 0.28);
-          transform: translateY(-2px);
+          border-color: var(--gold);
         }
 
         .card.disabled {
-          cursor: default;
           opacity: 0.45;
+          cursor: default;
         }
 
         .logo-wrap {
           position: relative;
-          width: 60px;
-          height: 60px;
-          border-radius: var(--radius-sm);
+          width: 100%;
+          aspect-ratio: 1;
+          border-radius: 8px;
           overflow: hidden;
-          flex-shrink: 0;
-        }
-
-        :global(.logo) {
-          display: block;
-          border-radius: var(--radius-sm);
-        }
-
-        .busy-overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(10, 10, 15, 0.65);
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
 
         .name {
-          color: var(--text-muted);
           font-size: 11px;
-          font-weight: 500;
+          color: var(--text-muted);
           line-height: 1.3;
           word-break: break-word;
-          transition: color 0.18s ease;
         }
 
         .card.selected .name {
-          color: #a09af8;
-          font-weight: 600;
+          color: var(--gold);
         }
 
         .check {
           position: absolute;
           top: 6px;
           right: 6px;
-          width: 18px;
-          height: 18px;
-          background: linear-gradient(135deg, #6c63ff 0%, #ff6584 100%);
+          width: 20px;
+          height: 20px;
+          background: var(--gold);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 8px rgba(108, 99, 255, 0.45);
-        }
-
-        .spinner {
-          display: inline-block;
-          width: 32px;
-          height: 32px;
-          border: 3px solid var(--border);
-          border-top-color: var(--accent);
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
-
-        .mini-spinner {
-          display: inline-block;
-          width: 16px;
-          height: 16px;
-          border: 2px solid rgba(255, 255, 255, 0.15);
-          border-top-color: #fff;
-          border-radius: 50%;
-          animation: spin 0.6s linear infinite;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 480px) {
-          main {
-            padding: 20px 14px 48px;
-          }
-          h1 {
-            font-size: 1.4rem;
-          }
-          .grid {
-            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-            gap: 10px;
-          }
         }
       `}</style>
     </>
