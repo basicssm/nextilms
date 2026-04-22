@@ -33,6 +33,19 @@ async function fetchWatchProviders(
   }
 }
 
+async function isSeriesStillAiring(filmId: number): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/tv/${filmId}?api_key=${API_KEY}`
+    );
+    if (!res.ok) return true;
+    const data = await res.json();
+    return data.status !== "Ended" && data.status !== "Canceled";
+  } catch {
+    return true;
+  }
+}
+
 async function filterByPlatform(
   candidates: WatchlistItem[],
   mediaType: "film" | "series",
@@ -227,9 +240,14 @@ export default function TonightModal() {
       (item) => item.media_type === "series" && item.status === "to_watch"
     );
 
+    const stillAiringFlags = await Promise.all(
+      watchingCandidates.map((item) => isSeriesStillAiring(item.film_id))
+    );
+    const activeWatchingCandidates = watchingCandidates.filter((_, i) => stillAiringFlags[i]);
+
     const [filteredMovies, filteredWatching, filteredSeriesQueue] = await Promise.all([
       filterByPlatform(movieCandidates, "film", platformIds),
-      filterByPlatform(watchingCandidates, "series", platformIds),
+      filterByPlatform(activeWatchingCandidates, "series", platformIds),
       filterByPlatform(seriesToWatchCandidates, "series", platformIds),
     ]);
 
@@ -255,7 +273,7 @@ export default function TonightModal() {
     <>
       <button className="tonight-btn" onClick={handleOpen}>
         <span className="star" aria-hidden>✦</span>
-        ¿Qué veré esta noche?
+        ¿Que puedo ver ahora?
       </button>
 
       {open && (
@@ -265,11 +283,11 @@ export default function TonightModal() {
           onClick={handleOverlayClick}
           role="presentation"
         >
-          <div className="modal" role="dialog" aria-modal="true" aria-label="Recomendaciones para esta noche">
+          <div className="modal" role="dialog" aria-modal="true" aria-label="¿Que puedo ver ahora?">
             <div className="modal-head">
               <h2 className="modal-title">
                 <span className="star-title" aria-hidden>✦</span>
-                ¿Qué veré esta noche?
+                ¿Que puedo ver ahora?
               </h2>
               <button className="close-btn" onClick={handleClose} aria-label="Cerrar">
                 ✕
