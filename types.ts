@@ -38,6 +38,14 @@ export type seriesDetail = {
   episode_run_time?: number[];
 };
 
+export type UserPlatform = {
+  id: string;
+  user_id: string;
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
+};
+
 export type WatchlistStatus = "watching" | "to_watch" | "watched";
 
 export type WatchlistItem = {

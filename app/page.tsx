@@ -9,27 +9,46 @@ import Films from "@/components/Films";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { useAuth } from "@/context/AuthContext";
+import { useUserPlatforms } from "@/hooks/useUserPlatforms";
+import Link from "next/link";
 
 type MediaType = "film" | "series";
-type FilmCategory = "popular" | "upcoming" | "trending";
-type SeriesCategory = "popular" | "airing" | "trending";
+type FilmCategory = "popular" | "upcoming" | "trending" | "my_platforms";
+type SeriesCategory = "popular" | "airing" | "trending" | "my_platforms";
 type Category = FilmCategory | SeriesCategory;
 
 const FILM_CATEGORIES: { id: FilmCategory; label: string }[] = [
   { id: "popular", label: "Populares en España" },
   { id: "upcoming", label: "Próximos estrenos" },
   { id: "trending", label: "Tendencias" },
+  { id: "my_platforms", label: "En mis plataformas" },
 ];
 
 const SERIES_CATEGORIES: { id: SeriesCategory; label: string }[] = [
   { id: "popular", label: "Populares" },
   { id: "airing", label: "En emisión" },
   { id: "trending", label: "Tendencias" },
+  { id: "my_platforms", label: "En mis plataformas" },
 ];
 
-function buildUrl(mediaType: MediaType, category: Category, page: number): string {
-  const base = `${API_BASE_URL}`;
+function buildUrl(
+  mediaType: MediaType,
+  category: Category,
+  page: number,
+  providerIds?: number[]
+): string {
+  const base = API_BASE_URL;
   const auth = `api_key=${API_KEY}&language=es-ES`;
+
+  if (category === "my_platforms") {
+    const providers = providerIds?.join("|") ?? "";
+    if (mediaType === "film") {
+      return `${base}/discover/movie?${auth}&with_watch_providers=${providers}&watch_region=ES&page=${page}`;
+    }
+    return `${base}/discover/tv?${auth}&with_watch_providers=${providers}&watch_region=ES&page=${page}`;
+  }
+
   if (mediaType === "film") {
     if (category === "upcoming") return `${base}/movie/upcoming?${auth}&region=ES&page=${page}`;
     if (category === "trending") return `${base}/trending/movie/week?${auth}&page=${page}`;
@@ -62,6 +81,8 @@ function normalizeItem(item: {
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
+  const { platformIds, loading: platformsLoading } = useUserPlatforms();
 
   const initMediaType = (searchParams.get("mediaType") === "series" ? "series" : "film") as MediaType;
   const initCategory = (searchParams.get("category") ?? "popular") as Category;
@@ -76,12 +97,19 @@ function HomeContent() {
   const loadingRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const isMyPlatforms = category === "my_platforms";
+  const providerIdsArr = Array.from(platformIds);
+  const hasNoPlatforms = isMyPlatforms && !authLoading && !platformsLoading && (
+    !user || platformIds.size === 0
+  );
+
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;
+    if (isMyPlatforms && (providerIdsArr.length === 0)) return;
     loadingRef.current = true;
     setLoading(true);
     try {
-      const url = buildUrl(mediaType, category, pageRef.current);
+      const url = buildUrl(mediaType, category, pageRef.current, providerIdsArr);
       const res = await fetch(url);
       const data = await res.json();
       if (data.results) {
@@ -94,7 +122,8 @@ function HomeContent() {
     }
     loadingRef.current = false;
     setLoading(false);
-  }, [mediaType, category]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaType, category, providerIdsArr.join(",")]);
 
   useEffect(() => {
     setFilms([]);
@@ -102,11 +131,12 @@ function HomeContent() {
     pageRef.current = 1;
     hasMoreRef.current = true;
     loadingRef.current = false;
-  }, [mediaType, category]);
+  }, [mediaType, category, platformIds]);
 
   useEffect(() => {
+    if (isMyPlatforms && (authLoading || platformsLoading)) return;
     loadMore();
-  }, [loadMore]);
+  }, [loadMore, isMyPlatforms, authLoading, platformsLoading]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -180,20 +210,43 @@ function HomeContent() {
           {categories.map(({ id, label }) => (
             <button
               key={id}
-              className={`cat-tab${category === id ? " active" : ""}`}
+              className={`cat-tab${category === id ? " active" : ""}${id === "my_platforms" ? " my-platforms-tab" : ""}`}
               onClick={() => switchCategory(id)}
             >
+              {id === "my_platforms" && <span className="tab-icon">▶</span>}
               {label}
             </button>
           ))}
         </div>
       </div>
 
-      <Films films={films} loading={loading} mediaType={mediaType} />
-
-      <div ref={sentinelRef} className="sentinel">
-        {loading && <span className="spinner" />}
-      </div>
+      {hasNoPlatforms ? (
+        <div className="platforms-prompt">
+          <div className="prompt-card">
+            <div className="prompt-icon">📺</div>
+            <h2>{!user ? "Inicia sesión" : "Configura tus plataformas"}</h2>
+            <p>
+              {!user
+                ? "Inicia sesión y elige tus plataformas de streaming para ver el contenido disponible en ellas."
+                : "Selecciona las plataformas que tienes contratadas para filtrar el contenido disponible."}
+            </p>
+            {!user ? (
+              <span className="prompt-hint">Pulsa el menú ☰ para iniciar sesión</span>
+            ) : (
+              <Link href="/platforms" className="prompt-btn">
+                Gestionar plataformas
+              </Link>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          <Films films={films} loading={loading} mediaType={mediaType} />
+          <div ref={sentinelRef} className="sentinel">
+            {loading && <span className="spinner" />}
+          </div>
+        </>
+      )}
 
       <style jsx>{`
         .hero {
@@ -275,7 +328,6 @@ function HomeContent() {
           background: none;
           border: none;
           border-bottom: 2px solid transparent;
-          color: #6666888;
           font-size: 17px;
           font-weight: 700;
           cursor: pointer;
@@ -298,6 +350,9 @@ function HomeContent() {
         }
 
         .cat-tab {
+          display: flex;
+          align-items: center;
+          gap: 5px;
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.08);
           color: #8888aa;
@@ -313,6 +368,85 @@ function HomeContent() {
           background: rgba(212, 175, 55, 0.14);
           border-color: rgba(212, 175, 55, 0.38);
           color: #d4af37;
+        }
+
+        .my-platforms-tab {
+          border-color: rgba(99, 179, 237, 0.2);
+          color: #7ab8e0;
+        }
+
+        .my-platforms-tab.active {
+          background: rgba(99, 179, 237, 0.12);
+          border-color: rgba(99, 179, 237, 0.45);
+          color: #63b3ed;
+        }
+
+        .tab-icon {
+          font-size: 9px;
+        }
+
+        /* Platforms prompt */
+        .platforms-prompt {
+          display: flex;
+          justify-content: center;
+          padding: 60px 24px;
+        }
+
+        .prompt-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          gap: 14px;
+          max-width: 380px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          border-radius: 16px;
+          padding: 40px 32px;
+        }
+
+        .prompt-icon {
+          font-size: 40px;
+          line-height: 1;
+        }
+
+        .prompt-card h2 {
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: #e8e8f2;
+          margin: 0;
+        }
+
+        .prompt-card p {
+          color: #8888aa;
+          font-size: 14px;
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .prompt-hint {
+          color: #6666888;
+          font-size: 13px;
+          margin-top: 4px;
+        }
+
+        :global(.prompt-btn) {
+          display: inline-block;
+          margin-top: 4px;
+          padding: 10px 24px;
+          background: rgba(212, 175, 55, 0.12);
+          border: 1px solid rgba(212, 175, 55, 0.35);
+          border-radius: 8px;
+          color: #d4af37;
+          font-size: 13px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: background 0.18s, border-color 0.18s;
+        }
+
+        :global(.prompt-btn:hover) {
+          background: rgba(212, 175, 55, 0.2);
+          border-color: rgba(212, 175, 55, 0.55);
         }
 
         .sentinel {

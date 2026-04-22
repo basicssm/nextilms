@@ -4,6 +4,7 @@ import Image from "next/image";
 import YouTube from "react-youtube";
 import { filmDetail, WatchProvider } from "@/types";
 import WatchlistButtons from "@/components/WatchlistButtons";
+import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 
 const PROVIDER_LOGO_BASE = "https://image.tmdb.org/t/p/original";
 
@@ -29,6 +30,8 @@ export default function Detail({
   videos: VideoResult[];
   seriesInfo?: SeriesInfo;
 }) {
+  const { platformIds } = useUserPlatforms();
+
   const {
     id,
     title,
@@ -123,17 +126,25 @@ export default function Detail({
             <div className="platforms">
               <span className="platforms-label">Disponible en</span>
               <div className="platforms-logos">
-                {watch_providers.map((p: WatchProvider) => (
-                  <div key={p.provider_id} className="platform-item" title={p.provider_name}>
-                    <Image
-                      src={`${PROVIDER_LOGO_BASE}${p.logo_path}`}
-                      alt={p.provider_name}
-                      width={40}
-                      height={40}
-                      className="platform-logo"
-                    />
-                  </div>
-                ))}
+                {watch_providers.map((p: WatchProvider) => {
+                  const isMine = platformIds.size > 0 && platformIds.has(p.provider_id);
+                  return (
+                    <div
+                      key={p.provider_id}
+                      className={`platform-item${isMine ? " mine" : ""}`}
+                      title={isMine ? `${p.provider_name} · En tus plataformas` : p.provider_name}
+                    >
+                      <Image
+                        src={`${PROVIDER_LOGO_BASE}${p.logo_path}`}
+                        alt={p.provider_name}
+                        width={40}
+                        height={40}
+                        className="platform-logo"
+                      />
+                      {isMine && <span className="mine-dot" aria-label="En tus plataformas" />}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -285,8 +296,9 @@ export default function Detail({
         }
 
         .platform-item {
+          position: relative;
           border-radius: 8px;
-          overflow: hidden;
+          overflow: visible;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
           transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
@@ -294,6 +306,27 @@ export default function Detail({
         .platform-item:hover {
           transform: translateY(-2px);
           box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+        }
+
+        .platform-item.mine {
+          box-shadow: 0 0 0 2px #d4af37, 0 2px 10px rgba(212, 175, 55, 0.35);
+          border-radius: 10px;
+        }
+
+        .platform-item.mine:hover {
+          box-shadow: 0 0 0 2px #d4af37, 0 4px 16px rgba(212, 175, 55, 0.5);
+        }
+
+        .mine-dot {
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          width: 10px;
+          height: 10px;
+          background: #d4af37;
+          border-radius: 50%;
+          border: 1.5px solid #080810;
+          box-shadow: 0 0 6px rgba(212, 175, 55, 0.7);
         }
 
         :global(.platform-logo) {
