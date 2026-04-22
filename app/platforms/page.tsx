@@ -9,6 +9,7 @@ import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
 
 const LOGO_BASE = "https://image.tmdb.org/t/p/original";
+const POPULAR_COUNT = 10;
 
 type TmdbProvider = {
   provider_id: number;
@@ -67,6 +68,42 @@ export default function PlatformsPage() {
   }
 
   const isLoading = fetching || authLoading || platformsLoading;
+  const popularProviders = providers.slice(0, POPULAR_COUNT);
+  const otherProviders = providers.slice(POPULAR_COUNT);
+
+  function ProviderCard({ p }: { p: TmdbProvider }) {
+    const selected = platformIds.has(p.provider_id);
+    const busy = toggling.has(p.provider_id);
+    return (
+      <button
+        key={p.provider_id}
+        className={`card${selected ? " selected" : ""}${!user ? " disabled" : ""}`}
+        onClick={() => handleToggle(p)}
+        disabled={!user || busy}
+        title={user ? p.provider_name : "Inicia sesión para seleccionar"}
+        aria-pressed={selected}
+      >
+        <div className="logo-wrap">
+          <Image
+            src={`${LOGO_BASE}${p.logo_path}`}
+            alt={p.provider_name}
+            width={60}
+            height={60}
+            className="logo"
+          />
+          {busy && <div className="busy-overlay"><span className="mini-spinner" /></div>}
+        </div>
+        <span className="name">{p.provider_name}</span>
+        {selected && (
+          <span className="check" aria-hidden>
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+              <path d="M1 3.5L3.8 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        )}
+      </button>
+    );
+  }
 
   return (
     <>
@@ -103,35 +140,22 @@ export default function PlatformsPage() {
                 {platformIds.size} {platformIds.size === 1 ? "plataforma seleccionada" : "plataformas seleccionadas"}
               </p>
             )}
-            <div className="grid">
-              {providers.map((p) => {
-                const selected = platformIds.has(p.provider_id);
-                const busy = toggling.has(p.provider_id);
-                return (
-                  <button
-                    key={p.provider_id}
-                    className={`card${selected ? " selected" : ""}${!user ? " disabled" : ""}`}
-                    onClick={() => handleToggle(p)}
-                    disabled={!user || busy}
-                    title={user ? p.provider_name : "Inicia sesión para seleccionar"}
-                    aria-pressed={selected}
-                  >
-                    <div className="logo-wrap">
-                      <Image
-                        src={`${LOGO_BASE}${p.logo_path}`}
-                        alt={p.provider_name}
-                        width={56}
-                        height={56}
-                        className="logo"
-                      />
-                      {busy && <div className="busy-overlay"><span className="mini-spinner" /></div>}
-                    </div>
-                    <span className="name">{p.provider_name}</span>
-                    {selected && <span className="check">✓</span>}
-                  </button>
-                );
-              })}
-            </div>
+
+            <section className="section">
+              <h2 className="section-title">Populares en España</h2>
+              <div className="grid">
+                {popularProviders.map((p) => <ProviderCard key={p.provider_id} p={p} />)}
+              </div>
+            </section>
+
+            {otherProviders.length > 0 && (
+              <section className="section">
+                <h2 className="section-title">Todas las plataformas</h2>
+                <div className="grid">
+                  {otherProviders.map((p) => <ProviderCard key={p.provider_id} p={p} />)}
+                </div>
+              </section>
+            )}
           </>
         )}
       </main>
@@ -184,7 +208,7 @@ export default function PlatformsPage() {
         .selected-count {
           color: var(--text-muted);
           font-size: 13px;
-          margin-bottom: 20px;
+          margin-bottom: 24px;
           font-family: var(--font-mono);
         }
 
@@ -194,10 +218,24 @@ export default function PlatformsPage() {
           padding: 60px 0;
         }
 
+        .section {
+          margin-bottom: 40px;
+        }
+
+        .section-title {
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--text-muted);
+          margin-bottom: 16px;
+          font-family: var(--font-mono);
+        }
+
         .grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-          gap: 14px;
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          gap: 12px;
         }
 
         .card {
@@ -206,9 +244,9 @@ export default function PlatformsPage() {
           flex-direction: column;
           align-items: center;
           gap: 10px;
-          padding: 16px 10px 14px;
-          background: var(--surface);
-          border: 2px solid var(--border);
+          padding: 18px 8px 14px;
+          background: transparent;
+          border: 2px solid transparent;
           border-radius: var(--radius-md);
           cursor: pointer;
           transition: all 0.18s ease;
@@ -216,32 +254,38 @@ export default function PlatformsPage() {
         }
 
         .card:hover:not(.disabled) {
-          background: var(--surface-hover);
-          border-color: var(--border-hover);
+          background: rgba(255, 255, 255, 0.04);
           transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         }
 
         .card.selected {
-          background: rgba(212, 175, 55, 0.08);
-          border-color: rgba(212, 175, 55, 0.55);
-          box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.15), 0 8px 24px rgba(212, 175, 55, 0.1);
+          background-image:
+            linear-gradient(var(--bg), var(--bg)),
+            linear-gradient(135deg, #6c63ff 0%, #ff6584 100%);
+          background-origin: border-box;
+          background-clip: padding-box, border-box;
+          box-shadow: 0 0 20px rgba(108, 99, 255, 0.12);
         }
 
         .card.selected:hover {
-          background: rgba(212, 175, 55, 0.13);
-          border-color: rgba(212, 175, 55, 0.75);
+          background-image:
+            linear-gradient(var(--bg), var(--bg)),
+            linear-gradient(135deg, #6c63ff 0%, #ff6584 100%);
+          background-origin: border-box;
+          background-clip: padding-box, border-box;
+          box-shadow: 0 0 28px rgba(108, 99, 255, 0.2);
+          transform: translateY(-2px);
         }
 
         .card.disabled {
           cursor: default;
-          opacity: 0.5;
+          opacity: 0.45;
         }
 
         .logo-wrap {
           position: relative;
-          width: 56px;
-          height: 56px;
+          width: 60px;
+          height: 60px;
           border-radius: var(--radius-sm);
           overflow: hidden;
           flex-shrink: 0;
@@ -267,27 +311,29 @@ export default function PlatformsPage() {
           font-weight: 500;
           line-height: 1.3;
           word-break: break-word;
+          transition: color 0.18s ease;
         }
 
         .card.selected .name {
-          color: #e0c96a;
+          background: linear-gradient(135deg, #6c63ff 0%, #ff6584 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          font-weight: 600;
         }
 
         .check {
           position: absolute;
-          top: 7px;
-          right: 7px;
+          top: 6px;
+          right: 6px;
           width: 18px;
           height: 18px;
-          background: #d4af37;
+          background: linear-gradient(135deg, #6c63ff 0%, #ff6584 100%);
           border-radius: 50%;
-          font-size: 10px;
-          font-weight: 800;
-          color: #0a0a0f;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 8px rgba(212, 175, 55, 0.5);
+          box-shadow: 0 2px 8px rgba(108, 99, 255, 0.45);
         }
 
         .spinner {
@@ -322,7 +368,7 @@ export default function PlatformsPage() {
             font-size: 1.4rem;
           }
           .grid {
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
             gap: 10px;
           }
         }
