@@ -413,7 +413,7 @@ export default function PlatformsPage() {
           border-color: var(--accent);
           background: var(--watching-bg);
           color: var(--accent);
-          box-shadow: 0 0 0 1px var(--accent);
+          box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.3);
         }
 
         .card.disabled {
