@@ -4,6 +4,7 @@ import Image from "next/image";
 import YouTube from "react-youtube";
 import { FilmDetail, WatchProvider } from "@/types";
 import WatchlistButtons from "@/components/WatchlistButtons";
+import RatingNotesPanel from "@/components/RatingNotesPanel";
 import EpisodeTracker, { SeasonInfo } from "@/components/EpisodeTracker";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 import { useWatchlist } from "@/hooks/useWatchlist";
@@ -38,7 +39,7 @@ export default function Detail({
 }) {
   const { platformIds } = useUserPlatforms();
   const filmId = Number(film.id);
-  const { item: watchlistItem, loading: watchlistLoading, setStatus } = useWatchlist(filmId);
+  const { item: watchlistItem, loading: watchlistLoading, setStatus, updateRating, updateNotes } = useWatchlist(filmId);
 
   const {
     title,
@@ -143,6 +144,13 @@ export default function Detail({
             item={watchlistItem}
             loading={watchlistLoading}
             setStatus={setStatus}
+          />
+
+          {/* Valoración y notas personales */}
+          <RatingNotesPanel
+            item={watchlistItem}
+            updateRating={updateRating}
+            updateNotes={updateNotes}
           />
 
           {/* Seguimiento de episodios (solo series en estado "viendo") */}

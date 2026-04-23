@@ -59,6 +59,9 @@ export default function NavUserMenu() {
                 <Link href="/platforms" className="menu-item" onClick={() => setMenuOpen(false)}>
                   <span className="item-icon">⊞</span> Mis plataformas
                 </Link>
+                <Link href="/stats" className="menu-item" onClick={() => setMenuOpen(false)}>
+                  <span className="item-icon">◎</span> Mis estadísticas
+                </Link>
                 <div className="divider" />
                 <button
                   className="menu-item menu-btn danger"

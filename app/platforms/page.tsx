@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import NavBar from "@/components/NavBar";
 import Back from "@/components/Back";
 import { useAuth } from "@/context/AuthContext";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
+import { useFullWatchlist } from "@/hooks/useWatchlist";
+import { fetchWatchProviders } from "@/utils/providers";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
 
 const LOGO_BASE = "https://image.tmdb.org/t/p/original";
@@ -37,13 +39,63 @@ function isFeatured(name: string) {
   return FEATURED_NAMES.some((f) => lower.includes(f));
 }
 
+type PlatformCoverage = {
+  providerId: number;
+  providerName: string;
+  logoPath: string;
+  count: number;
+  pct: number;
+};
+
 export default function PlatformsPage() {
   const { user, loading: authLoading } = useAuth();
-  const { platformIds, toggle, loading: platformsLoading } = useUserPlatforms();
+  const { platformIds, platforms, toggle, loading: platformsLoading } = useUserPlatforms();
+  const { items: watchlistItems } = useFullWatchlist();
   const [providers, setProviders] = useState<TmdbProvider[]>([]);
   const [fetching, setFetching] = useState(true);
   const [toggling, setToggling] = useState<Set<number>>(new Set());
   const [showAll, setShowAll] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [coverage, setCoverage] = useState<PlatformCoverage[] | null>(null);
+
+  const runAnalysis = useCallback(async () => {
+    if (platformIds.size === 0 || watchlistItems.length === 0) return;
+    setAnalyzing(true);
+    setCoverage(null);
+
+    const candidates = watchlistItems.filter(
+      (item) => item.status === "to_watch" || item.status === "watching"
+    );
+
+    const counts = new Map<number, number>();
+    await Promise.all(
+      candidates.map(async (item) => {
+        const itemProviders = await fetchWatchProviders(
+          item.film_id,
+          item.media_type ?? "film"
+        );
+        for (const p of itemProviders) {
+          if (platformIds.has(p.provider_id)) {
+            counts.set(p.provider_id, (counts.get(p.provider_id) ?? 0) + 1);
+          }
+        }
+      })
+    );
+
+    const total = candidates.length || 1;
+    const result: PlatformCoverage[] = platforms
+      .map((p) => ({
+        providerId: p.provider_id,
+        providerName: p.provider_name,
+        logoPath: p.logo_path,
+        count: counts.get(p.provider_id) ?? 0,
+        pct: Math.round(((counts.get(p.provider_id) ?? 0) / total) * 100),
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    setCoverage(result);
+    setAnalyzing(false);
+  }, [platformIds, platforms, watchlistItems]);
 
   useEffect(() => {
     async function loadProviders() {
@@ -222,6 +274,91 @@ export default function PlatformsPage() {
                     {others.map((p) => (
                       <ProviderCard key={p.provider_id} p={p} />
                     ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* ── Platform Value Analyzer ── */}
+            {user && platformIds.size > 0 && watchlistItems.length > 0 && (
+              <section className="section analyzer-section">
+                <div className="section-header">
+                  <div className="analyzer-title-wrap">
+                    <h2>Análisis de valor</h2>
+                    <p className="analyzer-subtitle">
+                      ¿Cuánto de tu lista está disponible en cada plataforma?
+                    </p>
+                  </div>
+                  <button
+                    className="analyze-btn"
+                    onClick={runAnalysis}
+                    disabled={analyzing}
+                  >
+                    {analyzing ? (
+                      <><span className="spin-sm" /> Analizando...</>
+                    ) : (
+                      coverage ? "Actualizar análisis" : "Analizar mis plataformas"
+                    )}
+                  </button>
+                </div>
+
+                {analyzing && (
+                  <div className="analyzer-loading">
+                    <span className="spin-sm" />
+                    <span className="analyzer-load-text">
+                      Consultando disponibilidad de {watchlistItems.filter((i) => i.status !== "watched").length} títulos...
+                    </span>
+                  </div>
+                )}
+
+                {coverage && !analyzing && (
+                  <div className="coverage-list">
+                    {coverage.map((item) => (
+                      <div key={item.providerId} className="coverage-row">
+                        <div className="coverage-platform">
+                          <Image
+                            src={`${LOGO_BASE}${item.logoPath}`}
+                            alt={item.providerName}
+                            width={28}
+                            height={28}
+                            style={{ borderRadius: 6, objectFit: "cover" }}
+                          />
+                          <span className="coverage-name">{item.providerName}</span>
+                        </div>
+                        <div className="coverage-bar-wrap">
+                          <div
+                            className="coverage-bar-fill"
+                            style={{ width: `${Math.max(item.pct, 2)}%` }}
+                          />
+                        </div>
+                        <span className="coverage-stat">
+                          {item.count} {item.count === 1 ? "título" : "títulos"}
+                          <span className="coverage-pct"> · {item.pct}%</span>
+                        </span>
+                      </div>
+                    ))}
+
+                    {coverage.length > 1 && (
+                      <div className="analyzer-insight">
+                        {coverage[0].pct >= 50 ? (
+                          <p>
+                            <strong>{coverage[0].providerName}</strong> cubre el{" "}
+                            <strong>{coverage[0].pct}%</strong> de tu lista pendiente. Es tu plataforma más rentable.
+                          </p>
+                        ) : (
+                          <p>
+                            Tu contenido está distribuido entre varias plataformas. La mayor cobertura la tiene{" "}
+                            <strong>{coverage[0].providerName}</strong> con un {coverage[0].pct}%.
+                          </p>
+                        )}
+                        {coverage[coverage.length - 1].count === 0 && (
+                          <p className="insight-warn">
+                            <strong>{coverage[coverage.length - 1].providerName}</strong> no tiene ningún
+                            título de tu lista pendiente.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </section>
@@ -502,6 +639,158 @@ export default function PlatformsPage() {
           background: var(--surface-hover);
         }
 
+        /* ── Analyzer ── */
+        .analyzer-section {
+          border-top: 1px solid var(--border);
+          padding-top: 32px;
+          margin-top: 8px;
+        }
+
+        .analyzer-title-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .analyzer-subtitle {
+          font-size: 13px;
+          color: var(--text-muted);
+          margin: 0;
+        }
+
+        .analyze-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: var(--accent-gradient);
+          border: none;
+          color: #fff;
+          font-family: var(--font-body);
+          font-size: 13px;
+          font-weight: 600;
+          padding: 10px 20px;
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          white-space: nowrap;
+          transition: opacity 0.2s;
+          flex-shrink: 0;
+        }
+
+        .analyze-btn:hover:not(:disabled) {
+          opacity: 0.88;
+        }
+
+        .analyze-btn:disabled {
+          opacity: 0.6;
+          cursor: default;
+        }
+
+        .spin-sm {
+          display: inline-block;
+          width: 13px;
+          height: 13px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: rotate 0.7s linear infinite;
+          flex-shrink: 0;
+        }
+
+        .analyzer-loading {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 20px 0;
+          color: var(--text-muted);
+          font-size: 13px;
+        }
+
+        .coverage-list {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          margin-top: 4px;
+          animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+
+        .coverage-row {
+          display: grid;
+          grid-template-columns: 180px 1fr auto;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .coverage-platform {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-width: 0;
+        }
+
+        .coverage-name {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .coverage-bar-wrap {
+          background: var(--surface);
+          border-radius: 4px;
+          height: 8px;
+          overflow: hidden;
+          border: 1px solid var(--border);
+        }
+
+        .coverage-bar-fill {
+          height: 100%;
+          background: var(--accent-gradient);
+          border-radius: 4px;
+          transition: width 0.5s ease;
+        }
+
+        .coverage-stat {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text);
+          white-space: nowrap;
+          font-family: var(--font-mono);
+        }
+
+        .coverage-pct {
+          color: var(--text-muted);
+          font-weight: 400;
+        }
+
+        .analyzer-insight {
+          margin-top: 8px;
+          padding: 14px 16px;
+          background: rgba(108, 99, 255, 0.06);
+          border: 1px solid rgba(108, 99, 255, 0.18);
+          border-radius: var(--radius-md);
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .analyzer-insight p {
+          font-size: 13px;
+          color: var(--text-muted);
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .insight-warn {
+          color: rgba(255, 180, 50, 0.9) !important;
+        }
+
         /* ── Responsive ── */
         @media (max-width: 600px) {
           .hero {
@@ -528,6 +817,31 @@ export default function PlatformsPage() {
 
           .notice {
             margin: 16px 16px 0;
+          }
+
+          .coverage-row {
+            grid-template-columns: 1fr auto;
+            grid-template-rows: auto auto;
+          }
+
+          .coverage-platform {
+            grid-column: 1;
+            grid-row: 1;
+          }
+
+          .coverage-stat {
+            grid-column: 2;
+            grid-row: 1;
+          }
+
+          .coverage-bar-wrap {
+            grid-column: 1 / -1;
+            grid-row: 2;
+          }
+
+          .analyze-btn {
+            font-size: 12px;
+            padding: 9px 14px;
           }
         }
       `}</style>
