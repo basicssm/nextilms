@@ -6,7 +6,7 @@ import { API_KEY, API_BASE_URL } from "@/apiconfig";
 import NavBar from "@/components/NavBar";
 import Back from "@/components/Back";
 import Detail from "@/components/Detail";
-import { filmDetail, WatchProvider } from "@/types";
+import { FilmDetail, WatchProvider } from "@/types";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -75,7 +75,7 @@ export default function SeriesDetailPage({
   const esRegion = providersData?.results?.ES;
   const watchProviders: WatchProvider[] = esRegion?.flatrate ?? esRegion?.free ?? [];
 
-  const normalized: filmDetail = {
+  const normalized: FilmDetail = {
     id: data.id,
     title: data.name,
     poster_path: data.poster_path,

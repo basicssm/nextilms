@@ -3,7 +3,7 @@
 import { Suspense, use } from "react";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { film } from "@/types";
+import { Film } from "@/types";
 import NavBar from "@/components/NavBar";
 import Films from "@/components/Films";
 import Back from "@/components/Back";
@@ -32,7 +32,7 @@ function normalizeItem(
     media_type?: string;
   },
   fallback: "film" | "series" = "film"
-): film | null {
+): Film | null {
   if (item.media_type === "person") return null;
   const mt =
     item.media_type === "tv"
@@ -58,7 +58,7 @@ function SearchContent({ search_param }: { search_param: string }) {
   const initMediaType: MediaType =
     rawType === "film" ? "film" : rawType === "series" ? "series" : "all";
   const [mediaType, setMediaType] = useState<MediaType>(initMediaType);
-  const [films, setFilms] = useState<film[]>([]);
+  const [films, setFilms] = useState<Film[]>([]);
   const [loading, setLoading] = useState(true);
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
@@ -77,7 +77,7 @@ function SearchContent({ search_param }: { search_param: string }) {
         const fallback = mediaType === "series" ? "series" : "film";
         const normalized = data.results
           .map((item: Parameters<typeof normalizeItem>[0]) => normalizeItem(item, fallback))
-          .filter((f: film | null): f is film => f !== null);
+          .filter((f: Film | null): f is Film => f !== null);
         setFilms((prev) => [...prev, ...normalized]);
         hasMoreRef.current = pageRef.current < (data.total_pages ?? 1);
         pageRef.current += 1;

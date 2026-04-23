@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { API_KEY, API_BASE_URL } from "@/apiconfig";
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
-import { film } from "@/types";
+import { Film } from "@/types";
 import NavBar from "@/components/NavBar";
 import Films from "@/components/Films";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -33,32 +33,21 @@ const SERIES_CATEGORIES: { id: SeriesCategory; label: string }[] = [
   { id: "my_platforms", label: "Mis plataformas" },
 ];
 
-function buildUrl(
-  mediaType: MediaType,
-  category: Category,
-  page: number,
-  providerIds?: number[]
-): string {
-  const base = API_BASE_URL;
+const ENDPOINTS: Record<MediaType, Record<string, string>> = {
+  film:   { popular: "/movie/popular", upcoming: "/movie/upcoming", trending: "/trending/movie/week", my_platforms: "/discover/movie" },
+  series: { popular: "/tv/popular",    airing:   "/tv/on_the_air",  trending: "/trending/tv/week",   my_platforms: "/discover/tv"    },
+};
+
+function buildUrl(mediaType: MediaType, category: Category, page: number, providerIds?: number[]): string {
   const auth = `api_key=${API_KEY}&language=es-ES`;
+  const path = ENDPOINTS[mediaType][category] ?? ENDPOINTS[mediaType].popular;
 
   if (category === "my_platforms") {
     const providers = providerIds?.join("|") ?? "";
-    if (mediaType === "film") {
-      return `${base}/discover/movie?${auth}&with_watch_providers=${providers}&watch_region=ES&page=${page}`;
-    }
-    return `${base}/discover/tv?${auth}&with_watch_providers=${providers}&watch_region=ES&page=${page}`;
+    return `${API_BASE_URL}${path}?${auth}&with_watch_providers=${providers}&watch_region=ES&page=${page}`;
   }
-
-  if (mediaType === "film") {
-    if (category === "upcoming") return `${base}/movie/upcoming?${auth}&region=ES&page=${page}`;
-    if (category === "trending") return `${base}/trending/movie/week?${auth}&page=${page}`;
-    return `${base}/movie/popular?${auth}&region=ES&page=${page}`;
-  } else {
-    if (category === "airing") return `${base}/tv/on_the_air?${auth}&page=${page}`;
-    if (category === "trending") return `${base}/trending/tv/week?${auth}&page=${page}`;
-    return `${base}/tv/popular?${auth}&region=ES&page=${page}`;
-  }
+  const extra = category === "upcoming" ? "&region=ES" : "";
+  return `${API_BASE_URL}${path}?${auth}${extra}&page=${page}`;
 }
 
 function normalizeItem(item: {
@@ -69,7 +58,7 @@ function normalizeItem(item: {
   vote_average: number;
   release_date?: string;
   first_air_date?: string;
-}): film {
+}): Film {
   return {
     id: item.id,
     title: item.title ?? item.name ?? "",
@@ -90,7 +79,7 @@ function HomeContent() {
 
   const [mediaType, setMediaType] = useState<MediaType>(initMediaType);
   const [category, setCategory] = useState<Category>(initCategory);
-  const [films, setFilms] = useState<film[]>([]);
+  const [films, setFilms] = useState<Film[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);

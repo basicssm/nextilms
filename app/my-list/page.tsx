@@ -9,36 +9,8 @@ import Back from "@/components/Back";
 import { useAuth } from "@/context/AuthContext";
 import { useFullWatchlist } from "@/hooks/useWatchlist";
 import { WatchlistItem, WatchlistStatus } from "@/types";
-
-const STATUS_CONFIG: Record<WatchlistStatus, {
-  label: string;
-  icon: string;
-  colorVar: string;
-  bgVar: string;
-  borderVar: string;
-}> = {
-  watching: {
-    label: "Viendo",
-    icon: "▶",
-    colorVar: "var(--watching)",
-    bgVar: "var(--watching-bg)",
-    borderVar: "var(--watching-border)",
-  },
-  to_watch: {
-    label: "Por ver",
-    icon: "◷",
-    colorVar: "var(--to-watch)",
-    bgVar: "var(--to-watch-bg)",
-    borderVar: "var(--to-watch-border)",
-  },
-  watched: {
-    label: "Vista",
-    icon: "✓",
-    colorVar: "var(--watched)",
-    bgVar: "var(--watched-bg)",
-    borderVar: "var(--watched-border)",
-  },
-};
+import { TMDB_POSTER_SM } from "@/utils/constants";
+import { WATCHLIST_STATUS_CONFIG as STATUS_CONFIG } from "@/utils/watchlistConfig";
 
 type TypeFilter = "all" | "film" | "series";
 type SortOrder = "recent" | "alpha";
@@ -53,7 +25,7 @@ function KanbanCard({
   onChangeStatus: (status: WatchlistStatus) => void;
 }) {
   const poster = item.poster_path
-    ? `https://image.tmdb.org/t/p/w342${item.poster_path}`
+    ? `${TMDB_POSTER_SM}${item.poster_path}`
     : `https://picsum.photos/seed/${item.film_id}/200/300`;
 
   const href = item.media_type === "series"

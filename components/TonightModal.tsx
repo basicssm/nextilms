@@ -9,9 +9,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 import { useFullWatchlist } from "@/hooks/useWatchlist";
 import { supabase } from "@/lib/supabase";
+import { TMDB_POSTER_XS, TMDB_LOGO_ORIGINAL } from "@/utils/constants";
 
-const POSTER_BASE = "https://image.tmdb.org/t/p/w185";
-const LOGO_BASE = "https://image.tmdb.org/t/p/original";
+const POSTER_BASE = TMDB_POSTER_XS;
+const LOGO_BASE = TMDB_LOGO_ORIGINAL;
 const FALLBACK_POSTER = "https://picsum.photos/id/444/185/278";
 
 type RecommendedItem = WatchlistItem & { availableOn: WatchProvider[] };

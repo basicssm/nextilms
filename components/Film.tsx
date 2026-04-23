@@ -1,10 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import { film as filmType, WatchlistStatus } from "@/types";
+import { Film as FilmType, WatchlistStatus } from "@/types";
+import { TMDB_POSTER_SM, THEATERS_WINDOW_DAYS } from "@/utils/constants";
+import { WATCHLIST_STATUS_CONFIG } from "@/utils/watchlistConfig";
 
-const POSTER_BASE = "https://image.tmdb.org/t/p/w342";
+const POSTER_BASE = TMDB_POSTER_SM;
 const FALLBACK = "https://picsum.photos/id/444/200/300";
-const THEATERS_WINDOW_DAYS = 75;
 
 function getStatusBadge(releaseDate: string | undefined, mediaType: "film" | "series") {
   if (!releaseDate) return null;
@@ -19,18 +20,12 @@ function getStatusBadge(releaseDate: string | undefined, mediaType: "film" | "se
   return null;
 }
 
-const WATCHLIST_CONFIG: Record<WatchlistStatus, { label: string; cssVar: string }> = {
-  watching: { label: "Viendo", cssVar: "var(--watching)" },
-  to_watch:  { label: "Por ver", cssVar: "var(--to-watch)" },
-  watched:   { label: "Vista",   cssVar: "var(--watched)" },
-};
-
 export default function Film({
   film,
   mediaType = "film",
   watchlistStatus,
 }: {
-  film: filmType;
+  film: FilmType;
   mediaType?: "film" | "series";
   watchlistStatus?: WatchlistStatus | null;
 }) {
@@ -39,7 +34,7 @@ export default function Film({
   const resolvedType = film.mediaType ?? mediaType;
   const href = resolvedType === "series" ? `/series/${id}` : `/film/${id}`;
   const statusBadge = getStatusBadge(release_date, resolvedType);
-  const wlCfg = watchlistStatus ? WATCHLIST_CONFIG[watchlistStatus] : null;
+  const wlCfg = watchlistStatus ? WATCHLIST_STATUS_CONFIG[watchlistStatus] : null;
 
   return (
     <div className="card">
@@ -70,7 +65,7 @@ export default function Film({
           {wlCfg && !statusBadge && (
             <span
               className="badge badge-watchlist"
-              style={{ "--wl-color": wlCfg.cssVar } as React.CSSProperties}
+              style={{ "--wl-color": wlCfg.colorVar } as React.CSSProperties}
             >
               {wlCfg.label}
             </span>
