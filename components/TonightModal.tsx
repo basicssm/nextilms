@@ -114,7 +114,7 @@ async function filterByPlatform(
       ]);
       const availableOn = providers.filter((p) => platformIds.has(p.provider_id));
       return availableOn.length > 0
-        ? { ...item, availableOn, runtime: meta.runtime, genreIds: meta.genreIds }
+        ? ({ ...item, availableOn, runtime: meta.runtime, genreIds: meta.genreIds } as RecommendedItem)
         : null;
     })
   );
