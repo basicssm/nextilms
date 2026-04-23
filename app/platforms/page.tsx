@@ -95,13 +95,22 @@ export default function PlatformsPage() {
   function ProviderCard({ p }: { p: TmdbProvider }) {
     const selected = platformIds.has(p.provider_id);
     const busy = toggling.has(p.provider_id);
+    const disabled = !user || busy;
     return (
-      <button
-        className={`card${selected ? " selected" : ""}`}
-        onClick={() => handleToggle(p)}
-        disabled={!user || busy}
+      <div
+        className={`card${selected ? " selected" : ""}${disabled ? " disabled" : ""}`}
+        onClick={() => !disabled && handleToggle(p)}
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        onKeyDown={(e) => {
+          if (!disabled && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            handleToggle(p);
+          }
+        }}
         title={user ? p.provider_name : "Inicia sesión para seleccionar"}
         aria-pressed={selected}
+        aria-disabled={disabled}
       >
         <div className="logo-wrap">
           <Image
@@ -117,11 +126,11 @@ export default function PlatformsPage() {
         {selected && (
           <span className="check" aria-hidden>
             <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-              <path d="M1 4L3.8 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M1 4L3.8 6.5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
         )}
-      </button>
+      </div>
     );
   }
 
@@ -378,9 +387,6 @@ export default function PlatformsPage() {
         /* ── Cards ── */
         .card {
           position: relative;
-          appearance: none;
-          -webkit-appearance: none;
-          font: inherit;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -389,15 +395,16 @@ export default function PlatformsPage() {
           height: 120px;
           padding: 12px 10px;
           background: var(--surface);
-          border: 1.5px solid var(--border);
+          border: 2px solid var(--border);
           border-radius: var(--radius-md);
           color: var(--text);
           cursor: pointer;
           text-align: center;
+          user-select: none;
           transition: border-color 0.2s, background 0.2s;
         }
 
-        .card:hover:not(:disabled):not(.selected) {
+        .card:hover:not(.disabled):not(.selected) {
           border-color: var(--border-hover);
           background: var(--surface-hover);
         }
@@ -406,9 +413,10 @@ export default function PlatformsPage() {
           border-color: var(--accent);
           background: var(--watching-bg);
           color: var(--accent);
+          box-shadow: 0 0 0 1px var(--accent);
         }
 
-        .card:disabled {
+        .card.disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
