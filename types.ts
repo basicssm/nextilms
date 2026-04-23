@@ -1,4 +1,4 @@
-export type film = {
+export type Film = {
   id: string;
   title: string;
   poster_path: string;
@@ -13,7 +13,7 @@ export type WatchProvider = {
   logo_path: string;
 };
 
-export type filmDetail = film & {
+export type FilmDetail = Film & {
   overview: string;
   vote_average: number;
   vote_count: number;
@@ -24,7 +24,7 @@ export type filmDetail = film & {
   watch_providers?: WatchProvider[];
 };
 
-export type seriesDetail = {
+export type SeriesDetail = {
   id: string;
   title: string;
   poster_path: string;

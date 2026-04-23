@@ -56,9 +56,11 @@ export function useWatchlist(filmId?: number) {
       if (!user || !filmId) return;
       setLoading(true);
 
+      const prev = item;
       if (item?.status === status) {
-        await supabase.from("watchlist").delete().eq("id", item.id);
         setItem(null);
+        const { error } = await supabase.from("watchlist").delete().eq("id", item.id);
+        if (error) setItem(prev);
       } else {
         const { data, error } = await supabase
           .from("watchlist")
@@ -111,8 +113,10 @@ export function useFullWatchlist() {
   }, [fetchAll]);
 
   const removeItem = async (id: string) => {
-    await supabase.from("watchlist").delete().eq("id", id);
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    const prev = items;
+    setItems((current) => current.filter((i) => i.id !== id));
+    const { error } = await supabase.from("watchlist").delete().eq("id", id);
+    if (error) setItems(prev);
   };
 
   const changeStatus = async (id: string, status: WatchlistStatus) => {

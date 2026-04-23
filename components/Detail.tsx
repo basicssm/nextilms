@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import YouTube from "react-youtube";
-import { filmDetail, WatchProvider } from "@/types";
+import { FilmDetail, WatchProvider } from "@/types";
 import WatchlistButtons from "@/components/WatchlistButtons";
 import EpisodeTracker, { SeasonInfo } from "@/components/EpisodeTracker";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import { TMDB_POSTER_MD, TMDB_BACKDROP, TMDB_LOGO_ORIGINAL } from "@/utils/constants";
 
-const PROVIDER_LOGO_BASE = "https://image.tmdb.org/t/p/original";
+const PROVIDER_LOGO_BASE = TMDB_LOGO_ORIGINAL;
 
 const opts = {
   height: "180",
@@ -30,7 +31,7 @@ export default function Detail({
   seriesInfo,
   mediaType = "film",
 }: {
-  film: filmDetail;
+  film: FilmDetail;
   videos: VideoResult[];
   seriesInfo?: SeriesInfo;
   mediaType?: "film" | "series";
@@ -51,12 +52,8 @@ export default function Detail({
     watch_providers,
   } = film;
 
-  const poster = poster_path
-    ? `https://image.tmdb.org/t/p/w500${poster_path}`
-    : null;
-  const backdrop = backdrop_path
-    ? `https://image.tmdb.org/t/p/w1280${backdrop_path}`
-    : null;
+  const poster = poster_path ? `${TMDB_POSTER_MD}${poster_path}` : null;
+  const backdrop = backdrop_path ? `${TMDB_BACKDROP}${backdrop_path}` : null;
 
   const runtimeStr =
     runtime ? `${Math.floor(runtime / 60)}h ${runtime % 60}m` : null;
@@ -140,7 +137,6 @@ export default function Detail({
 
           {/* Botones watchlist */}
           <WatchlistButtons
-            filmId={filmId}
             filmTitle={title}
             posterPath={poster_path ?? null}
             mediaType={mediaType}

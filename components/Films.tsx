@@ -1,6 +1,6 @@
 "use client";
 
-import { film, WatchlistStatus } from "@/types";
+import { Film as FilmType } from "@/types";
 import Film from "./Film";
 import { useWatchlistMap } from "@/hooks/useWatchlist";
 
@@ -28,7 +28,7 @@ export default function Films({
   loading,
   mediaType = "film",
 }: {
-  films: film[];
+  films: FilmType[];
   loading?: boolean;
   mediaType?: "film" | "series";
 }) {
@@ -99,7 +99,7 @@ export default function Films({
 
   return (
     <section className="grid">
-      {films.map((film: film) => (
+      {films.map((film: FilmType) => (
         <Film
           key={film.id}
           film={film}

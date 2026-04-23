@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { WatchlistItem, WatchlistStatus } from "@/types";
 import AuthModal from "@/components/AuthModal";
+import { WATCHLIST_STATUS_CONFIG } from "@/utils/watchlistConfig";
 
 type Props = {
-  filmId: number;
   filmTitle: string;
   posterPath: string | null;
   mediaType?: "film" | "series";
@@ -20,42 +20,11 @@ type Props = {
   ) => Promise<void>;
 };
 
-const BUTTONS: {
-  status: WatchlistStatus;
-  label: string;
-  icon: string;
-  colorVar: string;
-  bgVar: string;
-  borderVar: string;
-}[] = [
-  {
-    status: "watching",
-    label: "Viendo",
-    icon: "▶",
-    colorVar: "var(--watching)",
-    bgVar: "var(--watching-bg)",
-    borderVar: "var(--watching-border)",
-  },
-  {
-    status: "to_watch",
-    label: "Por ver",
-    icon: "◷",
-    colorVar: "var(--to-watch)",
-    bgVar: "var(--to-watch-bg)",
-    borderVar: "var(--to-watch-border)",
-  },
-  {
-    status: "watched",
-    label: "Vista",
-    icon: "✓",
-    colorVar: "var(--watched)",
-    bgVar: "var(--watched-bg)",
-    borderVar: "var(--watched-border)",
-  },
-];
+const BUTTONS = (Object.entries(WATCHLIST_STATUS_CONFIG) as [WatchlistStatus, typeof WATCHLIST_STATUS_CONFIG[WatchlistStatus]][]).map(
+  ([status, cfg]) => ({ status, ...cfg })
+);
 
 export default function WatchlistButtons({
-  filmId,
   filmTitle,
   posterPath,
   mediaType = "film",
@@ -85,9 +54,6 @@ export default function WatchlistButtons({
     }
     setStatus(status, filmTitle, posterPath, mediaType);
   };
-
-  // filmId is kept in props in case we need it for future use (e.g. deep links)
-  void filmId;
 
   return (
     <>
