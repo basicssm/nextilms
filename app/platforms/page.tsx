@@ -107,12 +107,20 @@ export default function PlatformsPage() {
           <Image
             src={`${LOGO_BASE}${p.logo_path}`}
             alt={p.provider_name}
-            width={25}
-            height={25}
+            fill
+            sizes="56px"
+            style={{ objectFit: "contain" }}
           />
           {busy && <div className="busy-overlay"><span className="spin" /></div>}
         </div>
         <span className="card-name">{p.provider_name}</span>
+        {selected && (
+          <span className="check" aria-hidden>
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+              <path d="M1 4L3.8 6.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        )}
       </button>
     );
   }
@@ -369,17 +377,24 @@ export default function PlatformsPage() {
 
         /* ── Cards ── */
         .card {
+          position: relative;
+          appearance: none;
+          -webkit-appearance: none;
+          font: inherit;
           display: flex;
           flex-direction: column;
           align-items: center;
+          justify-content: center;
           gap: 10px;
-          padding: 14px 10px;
+          height: 120px;
+          padding: 12px 10px;
           background: var(--surface);
           border: 1.5px solid var(--border);
           border-radius: var(--radius-md);
+          color: var(--text);
           cursor: pointer;
           text-align: center;
-          transition: border-color 0.2s, background 0.2s, color 0.2s;
+          transition: border-color 0.2s, background 0.2s;
         }
 
         .card:hover:not(:disabled):not(.selected) {
@@ -390,6 +405,7 @@ export default function PlatformsPage() {
         .card.selected {
           border-color: var(--accent);
           background: var(--watching-bg);
+          color: var(--accent);
         }
 
         .card:disabled {
@@ -399,17 +415,16 @@ export default function PlatformsPage() {
 
         .logo-wrap {
           position: relative;
-          width: 100%;
-          aspect-ratio: 1;
-          border-radius: 10px;
-          overflow: hidden;
-          background: #000;
+          width: 56px;
+          height: 56px;
+          flex-shrink: 0;
         }
 
         .busy-overlay {
           position: absolute;
           inset: 0;
           background: rgba(0, 0, 0, 0.55);
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -430,14 +445,26 @@ export default function PlatformsPage() {
 
         .card-name {
           font-size: 11px;
-          color: var(--text-muted);
+          font-weight: 500;
           line-height: 1.3;
-          word-break: break-word;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
 
-        .card.selected .card-name {
-          color: var(--accent);
-          font-weight: 600;
+        .check {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          width: 18px;
+          height: 18px;
+          background: var(--accent);
+          color: #fff;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         /* ── Show more ── */
