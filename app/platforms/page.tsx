@@ -92,35 +92,45 @@ export default function PlatformsPage() {
   const others = providers.filter((p) => !isFeatured(p.provider_name));
   const selectedCount = platformIds.size;
 
-  function ProviderCard({ p, large }: { p: TmdbProvider; large?: boolean }) {
+  function ProviderCard({ p }: { p: TmdbProvider }) {
     const selected = platformIds.has(p.provider_id);
     const busy = toggling.has(p.provider_id);
+    const disabled = !user || busy;
     return (
-      <button
-        className={`card${large ? " card-large" : ""}${selected ? " selected" : ""}${!user ? " disabled" : ""}${busy ? " busy" : ""}`}
-        onClick={() => handleToggle(p)}
-        disabled={!user || busy}
+      <div
+        className={`card${selected ? " selected" : ""}${disabled ? " disabled" : ""}`}
+        onClick={() => !disabled && handleToggle(p)}
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        onKeyDown={(e) => {
+          if (!disabled && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            handleToggle(p);
+          }
+        }}
         title={user ? p.provider_name : "Inicia sesión para seleccionar"}
         aria-pressed={selected}
+        aria-disabled={disabled}
       >
         <div className="logo-wrap">
           <Image
             src={`${LOGO_BASE}${p.logo_path}`}
             alt={p.provider_name}
-            width={25}
-            height={25}
+            width={56}
+            height={56}
+            style={{ objectFit: "contain", maxWidth: "100%", maxHeight: "100%" }}
           />
           {busy && <div className="busy-overlay"><span className="spin" /></div>}
         </div>
         <span className="card-name">{p.provider_name}</span>
         {selected && (
-          <span className="badge" aria-hidden>
-            <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-              <path d="M1 3L3.5 5.5L8 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <span className="check" aria-hidden>
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+              <path d="M1 4L3.8 6.5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
         )}
-      </button>
+      </div>
     );
   }
 
@@ -182,7 +192,7 @@ export default function PlatformsPage() {
               </div>
               <div className="grid grid-featured">
                 {featured.map((p) => (
-                  <ProviderCard key={p.provider_id} p={p} large />
+                  <ProviderCard key={p.provider_id} p={p} />
                 ))}
               </div>
             </section>
@@ -380,35 +390,30 @@ export default function PlatformsPage() {
           display: flex;
           flex-direction: column;
           align-items: center;
+          justify-content: center;
           gap: 10px;
-          padding: 14px 10px 14px;
+          height: 120px;
+          padding: 12px 10px;
           background: var(--surface);
-          border: 1.5px solid var(--border);
+          border: 2px solid var(--border);
           border-radius: var(--radius-md);
+          color: var(--text);
           cursor: pointer;
           text-align: center;
-          transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
+          user-select: none;
+          transition: border-color 0.2s, background 0.2s;
         }
 
-        .card:hover:not(.disabled) {
+        .card:hover:not(.disabled):not(.selected) {
           border-color: var(--border-hover);
           background: var(--surface-hover);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        }
-
-        .card-large {
-          padding: 18px 12px 16px;
         }
 
         .card.selected {
           border-color: var(--accent);
-          background: rgba(108, 99, 255, 0.08);
-          box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.2), 0 8px 24px rgba(108, 99, 255, 0.15);
-        }
-
-        .card.selected:hover:not(.disabled) {
-          box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.35), 0 12px 32px rgba(108, 99, 255, 0.2);
+          background: var(--watching-bg);
+          color: var(--accent);
+          box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.3);
         }
 
         .card.disabled {
@@ -416,27 +421,21 @@ export default function PlatformsPage() {
           cursor: not-allowed;
         }
 
-        .card.busy {
-          pointer-events: none;
-        }
-
         .logo-wrap {
           position: relative;
-          width: 100%;
-          aspect-ratio: 1;
-          border-radius: 10px;
-          overflow: hidden;
-          background: #000;
-        }
-
-        .card-large .logo-wrap {
-          border-radius: 12px;
+          width: 56px;
+          height: 56px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .busy-overlay {
           position: absolute;
           inset: 0;
           background: rgba(0, 0, 0, 0.55);
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -445,7 +444,7 @@ export default function PlatformsPage() {
         .spin {
           width: 18px;
           height: 18px;
-          border: 2px solid rgba(255,255,255,0.2);
+          border: 2px solid rgba(255, 255, 255, 0.2);
           border-top-color: white;
           border-radius: 50%;
           animation: rotate 0.7s linear infinite;
@@ -456,34 +455,27 @@ export default function PlatformsPage() {
         }
 
         .card-name {
-          font-size: 10px;
-          color: var(--text-muted);
-          line-height: 1.3;
-          word-break: break-word;
-          transition: color 0.2s;
-        }
-
-        .card-large .card-name {
           font-size: 11px;
+          font-weight: 500;
+          line-height: 1.3;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
 
-        .card.selected .card-name {
-          color: var(--accent);
-          font-weight: 600;
-        }
-
-        .badge {
+        .check {
           position: absolute;
-          top: 8px;
-          right: 8px;
-          width: 20px;
-          height: 20px;
+          top: 6px;
+          right: 6px;
+          width: 18px;
+          height: 18px;
           background: var(--accent);
+          color: #fff;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 8px rgba(108, 99, 255, 0.5);
         }
 
         /* ── Show more ── */
