@@ -92,12 +92,12 @@ export default function PlatformsPage() {
   const others = providers.filter((p) => !isFeatured(p.provider_name));
   const selectedCount = platformIds.size;
 
-  function ProviderCard({ p, large }: { p: TmdbProvider; large?: boolean }) {
+  function ProviderCard({ p }: { p: TmdbProvider }) {
     const selected = platformIds.has(p.provider_id);
     const busy = toggling.has(p.provider_id);
     return (
       <button
-        className={`card${large ? " card-large" : ""}${selected ? " selected" : ""}${!user ? " disabled" : ""}${busy ? " busy" : ""}`}
+        className={`card${selected ? " selected" : ""}`}
         onClick={() => handleToggle(p)}
         disabled={!user || busy}
         title={user ? p.provider_name : "Inicia sesión para seleccionar"}
@@ -113,13 +113,6 @@ export default function PlatformsPage() {
           {busy && <div className="busy-overlay"><span className="spin" /></div>}
         </div>
         <span className="card-name">{p.provider_name}</span>
-        {selected && (
-          <span className="badge" aria-hidden>
-            <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-              <path d="M1 3L3.5 5.5L8 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-        )}
       </button>
     );
   }
@@ -182,7 +175,7 @@ export default function PlatformsPage() {
               </div>
               <div className="grid grid-featured">
                 {featured.map((p) => (
-                  <ProviderCard key={p.provider_id} p={p} large />
+                  <ProviderCard key={p.provider_id} p={p} />
                 ))}
               </div>
             </section>
@@ -376,48 +369,32 @@ export default function PlatformsPage() {
 
         /* ── Cards ── */
         .card {
-          position: relative;
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 10px;
-          padding: 14px 10px 14px;
+          padding: 14px 10px;
           background: var(--surface);
           border: 1.5px solid var(--border);
           border-radius: var(--radius-md);
           cursor: pointer;
           text-align: center;
-          transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
+          transition: border-color 0.2s, background 0.2s, color 0.2s;
         }
 
-        .card:hover:not(.disabled) {
+        .card:hover:not(:disabled):not(.selected) {
           border-color: var(--border-hover);
           background: var(--surface-hover);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        }
-
-        .card-large {
-          padding: 18px 12px 16px;
         }
 
         .card.selected {
           border-color: var(--accent);
-          background: rgba(108, 99, 255, 0.08);
-          box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.2), 0 8px 24px rgba(108, 99, 255, 0.15);
+          background: var(--watching-bg);
         }
 
-        .card.selected:hover:not(.disabled) {
-          box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.35), 0 12px 32px rgba(108, 99, 255, 0.2);
-        }
-
-        .card.disabled {
+        .card:disabled {
           opacity: 0.5;
           cursor: not-allowed;
-        }
-
-        .card.busy {
-          pointer-events: none;
         }
 
         .logo-wrap {
@@ -427,10 +404,6 @@ export default function PlatformsPage() {
           border-radius: 10px;
           overflow: hidden;
           background: #000;
-        }
-
-        .card-large .logo-wrap {
-          border-radius: 12px;
         }
 
         .busy-overlay {
@@ -445,7 +418,7 @@ export default function PlatformsPage() {
         .spin {
           width: 18px;
           height: 18px;
-          border: 2px solid rgba(255,255,255,0.2);
+          border: 2px solid rgba(255, 255, 255, 0.2);
           border-top-color: white;
           border-radius: 50%;
           animation: rotate 0.7s linear infinite;
@@ -456,34 +429,15 @@ export default function PlatformsPage() {
         }
 
         .card-name {
-          font-size: 10px;
+          font-size: 11px;
           color: var(--text-muted);
           line-height: 1.3;
           word-break: break-word;
-          transition: color 0.2s;
-        }
-
-        .card-large .card-name {
-          font-size: 11px;
         }
 
         .card.selected .card-name {
           color: var(--accent);
           font-weight: 600;
-        }
-
-        .badge {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          width: 20px;
-          height: 20px;
-          background: var(--accent);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 8px rgba(108, 99, 255, 0.5);
         }
 
         /* ── Show more ── */
