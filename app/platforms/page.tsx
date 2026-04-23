@@ -107,9 +107,9 @@ export default function PlatformsPage() {
           <Image
             src={`${LOGO_BASE}${p.logo_path}`}
             alt={p.provider_name}
-            fill
-            sizes="56px"
-            style={{ objectFit: "contain" }}
+            width={56}
+            height={56}
+            style={{ objectFit: "contain", maxWidth: "100%", maxHeight: "100%" }}
           />
           {busy && <div className="busy-overlay"><span className="spin" /></div>}
         </div>
@@ -418,6 +418,9 @@ export default function PlatformsPage() {
           width: 56px;
           height: 56px;
           flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .busy-overlay {
