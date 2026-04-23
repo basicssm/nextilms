@@ -107,8 +107,8 @@ export default function PlatformsPage() {
           <Image
             src={`${LOGO_BASE}${p.logo_path}`}
             alt={p.provider_name}
-            fill
-            style={{ objectFit: "cover" }}
+            width={25}
+            height={25}
           />
           {busy && <div className="busy-overlay"><span className="spin" /></div>}
         </div>
