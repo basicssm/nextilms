@@ -57,6 +57,8 @@ export type WatchlistItem = {
   poster_path: string | null;
   status: WatchlistStatus;
   media_type?: "film" | "series";
+  rating?: number | null;
+  notes?: string | null;
   created_at: string;
   updated_at: string;
 };

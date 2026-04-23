@@ -7,6 +7,8 @@ import { WatchProvider } from "@/types";
 import NavBar from "@/components/NavBar";
 import Back from "@/components/Back";
 import Detail from "@/components/Detail";
+import CastSection from "@/components/CastSection";
+import RelatedTitles from "@/components/RelatedTitles";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -81,6 +83,8 @@ export default function DetailPage({
         <Back />
       </NavBar>
       <Detail film={{ ...data, watch_providers: watchProviders }} videos={videoList} mediaType="film" />
+      <CastSection filmId={Number(film_id)} mediaType="film" />
+      <RelatedTitles filmId={Number(film_id)} mediaType="film" />
     </>
   );
 }

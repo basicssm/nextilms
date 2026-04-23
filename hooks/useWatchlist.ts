@@ -85,7 +85,35 @@ export function useWatchlist(filmId?: number) {
     [user, filmId, item]
   );
 
-  return { item, loading, setStatus, refetch: fetchItem };
+  const updateRating = useCallback(
+    async (rating: number | null) => {
+      if (!user || !item) return;
+      const { data, error } = await supabase
+        .from("watchlist")
+        .update({ rating, updated_at: new Date().toISOString() })
+        .eq("id", item.id)
+        .select()
+        .single();
+      if (!error && data) setItem(data as WatchlistItem);
+    },
+    [user, item]
+  );
+
+  const updateNotes = useCallback(
+    async (notes: string) => {
+      if (!user || !item) return;
+      const { data, error } = await supabase
+        .from("watchlist")
+        .update({ notes, updated_at: new Date().toISOString() })
+        .eq("id", item.id)
+        .select()
+        .single();
+      if (!error && data) setItem(data as WatchlistItem);
+    },
+    [user, item]
+  );
+
+  return { item, loading, setStatus, updateRating, updateNotes, refetch: fetchItem };
 }
 
 export function useFullWatchlist() {

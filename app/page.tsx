@@ -15,36 +15,63 @@ import Link from "next/link";
 import TonightModal from "@/components/TonightModal";
 
 type MediaType = "film" | "series";
-type FilmCategory = "popular" | "upcoming" | "trending" | "my_platforms";
-type SeriesCategory = "popular" | "airing" | "trending" | "my_platforms";
+type FilmCategory = "popular" | "upcoming" | "trending" | "my_platforms" | "discover";
+type SeriesCategory = "popular" | "airing" | "trending" | "my_platforms" | "discover";
 type Category = FilmCategory | SeriesCategory;
 
+type DiscoverFilters = {
+  genreId: number | null;
+  minRating: number;
+};
+
 const FILM_CATEGORIES: { id: FilmCategory; label: string }[] = [
-  { id: "popular",     label: "Populares" },
-  { id: "upcoming",    label: "Próximos estrenos" },
-  { id: "trending",    label: "Tendencias" },
+  { id: "popular",      label: "Populares" },
+  { id: "upcoming",     label: "Próximos estrenos" },
+  { id: "trending",     label: "Tendencias" },
   { id: "my_platforms", label: "Mis plataformas" },
+  { id: "discover",     label: "Explorar" },
 ];
 
 const SERIES_CATEGORIES: { id: SeriesCategory; label: string }[] = [
-  { id: "popular",     label: "Populares" },
-  { id: "airing",     label: "En emisión" },
-  { id: "trending",   label: "Tendencias" },
+  { id: "popular",      label: "Populares" },
+  { id: "airing",      label: "En emisión" },
+  { id: "trending",    label: "Tendencias" },
   { id: "my_platforms", label: "Mis plataformas" },
+  { id: "discover",    label: "Explorar" },
 ];
 
 const ENDPOINTS: Record<MediaType, Record<string, string>> = {
-  film:   { popular: "/movie/popular", upcoming: "/movie/upcoming", trending: "/trending/movie/week", my_platforms: "/discover/movie" },
-  series: { popular: "/tv/popular",    airing:   "/tv/on_the_air",  trending: "/trending/tv/week",   my_platforms: "/discover/tv"    },
+  film:   { popular: "/movie/popular", upcoming: "/movie/upcoming", trending: "/trending/movie/week", my_platforms: "/discover/movie", discover: "/discover/movie" },
+  series: { popular: "/tv/popular",    airing:   "/tv/on_the_air",  trending: "/trending/tv/week",   my_platforms: "/discover/tv",    discover: "/discover/tv"    },
 };
 
-function buildUrl(mediaType: MediaType, category: Category, page: number, providerIds?: number[]): string {
+const RATING_OPTIONS = [
+  { label: "Cualquiera", value: 0 },
+  { label: "5+", value: 5 },
+  { label: "6+", value: 6 },
+  { label: "7+", value: 7 },
+  { label: "8+", value: 8 },
+];
+
+function buildUrl(
+  mediaType: MediaType,
+  category: Category,
+  page: number,
+  providerIds?: number[],
+  filters?: DiscoverFilters
+): string {
   const auth = `api_key=${API_KEY}&language=es-ES`;
   const path = ENDPOINTS[mediaType][category] ?? ENDPOINTS[mediaType].popular;
 
   if (category === "my_platforms") {
     const providers = providerIds?.join("|") ?? "";
     return `${API_BASE_URL}${path}?${auth}&with_watch_providers=${providers}&watch_region=ES&page=${page}`;
+  }
+  if (category === "discover") {
+    let url = `${API_BASE_URL}${path}?${auth}&sort_by=vote_average.desc&vote_count.gte=100&watch_region=ES&page=${page}`;
+    if (filters?.genreId) url += `&with_genres=${filters.genreId}`;
+    if (filters?.minRating) url += `&vote_average.gte=${filters.minRating}`;
+    return url;
   }
   const extra = category === "upcoming" ? "&region=ES" : "";
   return `${API_BASE_URL}${path}?${auth}${extra}&page=${page}`;
@@ -88,6 +115,18 @@ function HomeContent() {
   const loadingRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
+  const [genreFilter, setGenreFilter] = useState<number | null>(null);
+  const [minRating, setMinRating] = useState<number>(0);
+
+  useEffect(() => {
+    if (category !== "discover") return;
+    const segment = mediaType === "film" ? "movie" : "tv";
+    fetch(`${API_BASE_URL}/genre/${segment}/list?api_key=${API_KEY}&language=es-ES`)
+      .then((r) => r.json())
+      .then((d) => setGenres(d.genres ?? []));
+  }, [mediaType, category]);
+
   const isMyPlatforms = category === "my_platforms";
   const providerIdsArr = Array.from(platformIds);
   const hasNoPlatforms = isMyPlatforms && !authLoading && !platformsLoading && (
@@ -100,7 +139,8 @@ function HomeContent() {
     loadingRef.current = true;
     setLoading(true);
     try {
-      const url = buildUrl(mediaType, category, pageRef.current, providerIdsArr);
+      const filters: DiscoverFilters = { genreId: genreFilter, minRating };
+      const url = buildUrl(mediaType, category, pageRef.current, providerIdsArr, filters);
       const res = await fetch(url);
       const data = await res.json();
       if (data.results) {
@@ -114,7 +154,7 @@ function HomeContent() {
     loadingRef.current = false;
     setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaType, category, providerIdsArr.join(",")]);
+  }, [mediaType, category, providerIdsArr.join(","), genreFilter, minRating]);
 
   useEffect(() => {
     setFilms([]);
@@ -144,11 +184,17 @@ function HomeContent() {
   function switchMediaType(type: MediaType) {
     setMediaType(type);
     setCategory("popular");
+    setGenreFilter(null);
+    setMinRating(0);
     router.replace(`/?mediaType=${type}&category=popular`);
   }
 
   function switchCategory(cat: Category) {
     setCategory(cat);
+    if (cat !== "discover") {
+      setGenreFilter(null);
+      setMinRating(0);
+    }
     router.replace(`/?mediaType=${mediaType}&category=${cat}`);
   }
 
@@ -216,7 +262,7 @@ function HomeContent() {
             {categories.map(({ id, label }) => (
               <button
                 key={id}
-                className={`cat-chip${category === id ? " active" : ""}${id === "my_platforms" ? " chip-platforms" : ""}`}
+                className={`cat-chip${category === id ? " active" : ""}${id === "my_platforms" ? " chip-platforms" : ""}${id === "discover" ? " chip-discover" : ""}`}
                 onClick={() => switchCategory(id)}
               >
                 {label}
@@ -224,6 +270,62 @@ function HomeContent() {
             ))}
           </div>
         </div>
+
+        {/* Filtros avanzados — solo en "Explorar" */}
+        {category === "discover" && (
+          <div className="filter-panel">
+            {/* Géneros */}
+            {genres.length > 0 && (
+              <div className="filter-row">
+                <span className="filter-label">Género</span>
+                <div className="filter-chips-wrap">
+                  <div className="filter-chips">
+                    <button
+                      className={`filter-chip${genreFilter === null ? " active" : ""}`}
+                      onClick={() => { setGenreFilter(null); }}
+                    >
+                      Todos
+                    </button>
+                    {genres.map((g) => (
+                      <button
+                        key={g.id}
+                        className={`filter-chip${genreFilter === g.id ? " active" : ""}`}
+                        onClick={() => setGenreFilter(genreFilter === g.id ? null : g.id)}
+                      >
+                        {g.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Puntuación mínima */}
+            <div className="filter-row">
+              <span className="filter-label">Puntuación</span>
+              <div className="filter-chips">
+                {RATING_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    className={`filter-chip${minRating === opt.value ? " active" : ""}`}
+                    onClick={() => setMinRating(opt.value)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {(genreFilter !== null || minRating > 0) && (
+              <button
+                className="filter-clear"
+                onClick={() => { setGenreFilter(null); setMinRating(0); }}
+              >
+                ✕ Limpiar filtros
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Contenido ───────────────────────────── */}
@@ -447,6 +549,106 @@ function HomeContent() {
           background: rgba(108, 99, 255, 0.15);
           border-color: rgba(108, 99, 255, 0.5);
           color: var(--accent);
+        }
+
+        .chip-discover {
+          border-color: rgba(212, 175, 55, 0.25);
+          color: var(--gold);
+        }
+
+        .chip-discover.active {
+          background: rgba(212, 175, 55, 0.1);
+          border-color: rgba(212, 175, 55, 0.5);
+          color: var(--gold);
+        }
+
+        /* ── Filter panel ───────────────────────── */
+        .filter-panel {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          padding: 16px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          animation: fadeInUp 0.2s ease;
+        }
+
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .filter-row {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .filter-label {
+          font-size: 10px;
+          font-weight: 700;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
+
+        .filter-chips-wrap {
+          overflow-x: auto;
+          scrollbar-width: none;
+          margin: 0 -4px;
+          padding: 0 4px;
+        }
+
+        .filter-chips-wrap::-webkit-scrollbar { display: none; }
+
+        .filter-chips {
+          display: flex;
+          gap: 6px;
+          flex-wrap: nowrap;
+          min-width: max-content;
+        }
+
+        .filter-chip {
+          background: var(--bg);
+          border: 1px solid var(--border);
+          color: var(--text-muted);
+          font-family: var(--font-body);
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          padding: 5px 13px;
+          border-radius: 20px;
+          transition: all 0.15s;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        .filter-chip:hover:not(.active) {
+          border-color: var(--border-hover);
+          color: var(--text);
+        }
+
+        .filter-chip.active {
+          background: rgba(212, 175, 55, 0.12);
+          border-color: rgba(212, 175, 55, 0.45);
+          color: var(--gold);
+        }
+
+        .filter-clear {
+          background: none;
+          border: none;
+          color: var(--text-muted);
+          font-size: 12px;
+          font-family: var(--font-body);
+          cursor: pointer;
+          align-self: flex-start;
+          padding: 2px 0;
+          transition: color 0.15s;
+        }
+
+        .filter-clear:hover {
+          color: var(--text);
         }
 
         /* ── Platforms prompt ───────────────────── */
