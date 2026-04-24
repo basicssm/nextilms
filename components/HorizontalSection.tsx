@@ -46,6 +46,10 @@ export default function HorizontalSection({
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [displayFilms, setDisplayFilms] = useState<FilmType[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [nextPage, setNextPage] = useState(2);
+  const [totalPages, setTotalPages] = useState(1);
+  const [extraItems, setExtraItems] = useState<FilmType[]>([]);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   const scrollKey = `hscroll-${section.id}-${mediaType}-${selectedPlatformIds.join(",")}`;
 
@@ -69,6 +73,16 @@ export default function HorizontalSection({
     dedupingInterval: 300_000,
   });
 
+  const moreUrl =
+    isFetchingMore && url && nextPage <= totalPages
+      ? `${url}&page=${nextPage}`
+      : null;
+
+  const { data: moreData } = useSWR(moreUrl, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 300_000,
+  });
+
   // Deduplicate against already-shown films across sections
   useEffect(() => {
     if (!data) return;
@@ -78,8 +92,21 @@ export default function HorizontalSection({
     const unique = all.filter((f) => !seenIds.current.has(f.id));
     unique.forEach((f) => seenIds.current.add(f.id));
     setDisplayFilms(unique);
+    setTotalPages(data.total_pages ?? 1);
     setLoaded(true);
   }, [data, seenIds]);
+
+  useEffect(() => {
+    if (!moreData) return;
+    const all: FilmType[] = (moreData.results ?? []).map((item: RawItem) =>
+      normalizeItem(item)
+    );
+    const unique = all.filter((f) => !seenIds.current.has(f.id));
+    unique.forEach((f) => seenIds.current.add(f.id));
+    setExtraItems((prev) => [...prev, ...unique]);
+    setNextPage((p) => p + 1);
+    setIsFetchingMore(false);
+  }, [moreData, seenIds]);
 
   function handleScroll() {
     const el = scrollRef.current;
@@ -127,10 +154,13 @@ export default function HorizontalSection({
   }
 
   // Remove titles the user has already watched or is watching
-  const visibleFilms = displayFilms.filter((f) => {
+  const allFilms = [...displayFilms, ...extraItems];
+  const visibleFilms = allFilms.filter((f) => {
     const status = watchlistMap.get(Number(f.id));
     return status !== "watched" && status !== "watching";
   });
+
+  const showMoreButton = loaded && nextPage <= totalPages && visibleFilms.length > 0;
 
   // Hide section completely once loaded with no results
   if (loaded && visibleFilms.length === 0) return null;
@@ -193,6 +223,22 @@ export default function HorizontalSection({
           </button>
         )}
       </div>
+
+      {showMoreButton && (
+        <div className="show-more-wrap">
+          <button
+            className="show-more-btn"
+            onClick={() => setIsFetchingMore(true)}
+            disabled={isFetchingMore}
+            aria-label="Cargar más títulos"
+          >
+            {isFetchingMore ? (
+              <span className="show-more-spinner" aria-hidden="true" />
+            ) : null}
+            {isFetchingMore ? "Cargando…" : "Mostrar más"}
+          </button>
+        </div>
+      )}
 
       <style jsx>{`
         .section {
@@ -321,6 +367,60 @@ export default function HorizontalSection({
           }
           .section-title {
             font-size: 1rem;
+          }
+        }
+
+        /* ── Mostrar más ── */
+        .show-more-wrap {
+          padding: 4px 32px 0;
+        }
+
+        .show-more-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          background: transparent;
+          border: 1px solid var(--border-hover);
+          color: var(--text-muted);
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+          padding: 6px 16px;
+          border-radius: 20px;
+          cursor: pointer;
+          transition: color 0.18s, border-color 0.18s, background 0.18s;
+        }
+
+        .show-more-btn:hover:not(:disabled) {
+          color: var(--text);
+          border-color: var(--gold);
+          background: rgba(212, 175, 55, 0.08);
+        }
+
+        .show-more-btn:disabled {
+          cursor: default;
+          opacity: 0.55;
+        }
+
+        .show-more-spinner {
+          width: 11px;
+          height: 11px;
+          border: 1.5px solid var(--text-muted);
+          border-top-color: var(--gold);
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+          flex-shrink: 0;
+        }
+
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        @media (max-width: 480px) {
+          .show-more-wrap {
+            padding: 4px 16px 0;
           }
         }
       `}</style>
