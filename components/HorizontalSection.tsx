@@ -170,12 +170,7 @@ export default function HorizontalSection({
   return (
     <div ref={sectionRef} className="section">
       <div className="section-header">
-        <h2 className="section-title">
-          <span className="emoji" aria-hidden>
-            {section.emoji}
-          </span>
-          {section.title}
-        </h2>
+        <h2 className="section-title">{section.title}</h2>
       </div>
 
       <div className="scroll-container">
@@ -211,6 +206,26 @@ export default function HorizontalSection({
                   </div>
                 )
               )}
+
+          {showMoreButton && (
+            <div className="card-wrap card-wrap-more">
+              <button
+                className="show-more-card"
+                onClick={() => setIsFetchingMore(true)}
+                disabled={isFetchingMore}
+                aria-label="Cargar más títulos"
+              >
+                {isFetchingMore ? (
+                  <span className="show-more-spinner" aria-hidden="true" />
+                ) : (
+                  <span className="show-more-icon">+</span>
+                )}
+                <span className="show-more-label">
+                  {isFetchingMore ? "Cargando…" : "Mostrar más"}
+                </span>
+              </button>
+            </div>
+          )}
         </div>
 
         {canScrollRight && (
@@ -224,22 +239,6 @@ export default function HorizontalSection({
         )}
       </div>
 
-      {showMoreButton && (
-        <div className="show-more-wrap">
-          <button
-            className="show-more-btn"
-            onClick={() => setIsFetchingMore(true)}
-            disabled={isFetchingMore}
-            aria-label="Cargar más títulos"
-          >
-            {isFetchingMore ? (
-              <span className="show-more-spinner" aria-hidden="true" />
-            ) : null}
-            {isFetchingMore ? "Cargando…" : "Mostrar más"}
-          </button>
-        </div>
-      )}
-
       <style jsx>{`
         .section {
           display: flex;
@@ -251,7 +250,7 @@ export default function HorizontalSection({
         }
 
         .section-header {
-          padding: 0 32px;
+          padding: 0 24px;
         }
 
         .section-title {
@@ -260,15 +259,7 @@ export default function HorizontalSection({
           font-weight: 700;
           color: var(--text);
           letter-spacing: -0.01em;
-          display: flex;
-          align-items: center;
-          gap: 8px;
           margin: 0;
-        }
-
-        .emoji {
-          font-size: 1.2rem;
-          line-height: 1;
         }
 
         /* ── Scroll ── */
@@ -281,9 +272,10 @@ export default function HorizontalSection({
           gap: ${CARD_GAP}px;
           overflow-x: auto;
           scroll-snap-type: x mandatory;
+          scroll-padding-left: 24px;
           -webkit-overflow-scrolling: touch;
           scrollbar-width: none;
-          padding: 4px 32px 12px;
+          padding: 4px 24px 12px;
         }
 
         .scroll-row::-webkit-scrollbar {
@@ -304,6 +296,69 @@ export default function HorizontalSection({
           width: 100%;
           aspect-ratio: 2 / 3;
           border-radius: 14px;
+        }
+
+        /* ── Mostrar más como slide ── */
+        .card-wrap-more {
+          flex-shrink: 0;
+          width: ${CARD_WIDTH}px;
+          scroll-snap-align: start;
+        }
+
+        .show-more-card {
+          width: 100%;
+          aspect-ratio: 2 / 3;
+          border-radius: 14px;
+          border: 1px dashed var(--border-hover);
+          background: var(--surface);
+          color: var(--text-muted);
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: color 0.18s, border-color 0.18s, background 0.18s;
+          padding: 0;
+        }
+
+        .show-more-card:hover:not(:disabled) {
+          color: var(--text);
+          border-color: var(--gold);
+          background: rgba(212, 175, 55, 0.08);
+        }
+
+        .show-more-card:disabled {
+          cursor: default;
+          opacity: 0.55;
+        }
+
+        .show-more-icon {
+          font-size: 28px;
+          line-height: 1;
+          font-weight: 300;
+        }
+
+        .show-more-label {
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+        }
+
+        .show-more-spinner {
+          width: 20px;
+          height: 20px;
+          border: 2px solid var(--text-muted);
+          border-top-color: var(--gold);
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+          flex-shrink: 0;
+        }
+
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
         }
 
         /* ── Arrows ── */
@@ -358,6 +413,7 @@ export default function HorizontalSection({
           }
           .scroll-row {
             padding: 4px 16px 12px;
+            scroll-padding-left: 16px;
           }
           .card-wrap {
             width: 120px;
@@ -365,62 +421,11 @@ export default function HorizontalSection({
           .card-wrap-upcoming {
             width: 135px;
           }
+          .card-wrap-more {
+            width: 120px;
+          }
           .section-title {
             font-size: 1rem;
-          }
-        }
-
-        /* ── Mostrar más ── */
-        .show-more-wrap {
-          padding: 4px 32px 0;
-        }
-
-        .show-more-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          background: transparent;
-          border: 1px solid var(--border-hover);
-          color: var(--text-muted);
-          font-size: 12px;
-          font-weight: 600;
-          letter-spacing: 0.02em;
-          padding: 6px 16px;
-          border-radius: 20px;
-          cursor: pointer;
-          transition: color 0.18s, border-color 0.18s, background 0.18s;
-        }
-
-        .show-more-btn:hover:not(:disabled) {
-          color: var(--text);
-          border-color: var(--gold);
-          background: rgba(212, 175, 55, 0.08);
-        }
-
-        .show-more-btn:disabled {
-          cursor: default;
-          opacity: 0.55;
-        }
-
-        .show-more-spinner {
-          width: 11px;
-          height: 11px;
-          border: 1.5px solid var(--text-muted);
-          border-top-color: var(--gold);
-          border-radius: 50%;
-          animation: spin 0.7s linear infinite;
-          flex-shrink: 0;
-        }
-
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @media (max-width: 480px) {
-          .show-more-wrap {
-            padding: 4px 16px 0;
           }
         }
       `}</style>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { WatchlistItem, Film as FilmType } from "@/types";
 import Film from "@/components/Film";
 
@@ -18,18 +18,19 @@ export default function WatchedSection({ items, mediaType }: Props) {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const watchedItems = items
-    .filter((item) => {
+  const watchedItems = useMemo(() => {
+    const filtered = items.filter((item) => {
       if (item.status !== "watched") return false;
       if (!item.media_type) return mediaType === "film";
       return item.media_type === mediaType;
-    })
-    .sort((a, b) => {
-      const ra = a.rating ?? -1;
-      const rb = b.rating ?? -1;
-      if (rb !== ra) return rb - ra;
-      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
+    const arr = [...filtered];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [items, mediaType]);
 
   useEffect(() => {
     handleScroll();
@@ -69,10 +70,7 @@ export default function WatchedSection({ items, mediaType }: Props) {
   return (
     <div className="section">
       <div className="section-header">
-        <h2 className="section-title">
-          <span className="emoji" aria-hidden>🔁</span>
-          Volver a ver
-        </h2>
+        <h2 className="section-title">Volver a ver</h2>
       </div>
 
       <div className="scroll-container">
@@ -112,7 +110,7 @@ export default function WatchedSection({ items, mediaType }: Props) {
         }
 
         .section-header {
-          padding: 0 32px;
+          padding: 0 24px;
         }
 
         .section-title {
@@ -121,15 +119,7 @@ export default function WatchedSection({ items, mediaType }: Props) {
           font-weight: 700;
           color: var(--text);
           letter-spacing: -0.01em;
-          display: flex;
-          align-items: center;
-          gap: 8px;
           margin: 0;
-        }
-
-        .emoji {
-          font-size: 1.2rem;
-          line-height: 1;
         }
 
         .scroll-container {
@@ -141,9 +131,10 @@ export default function WatchedSection({ items, mediaType }: Props) {
           gap: ${CARD_GAP}px;
           overflow-x: auto;
           scroll-snap-type: x mandatory;
+          scroll-padding-left: 24px;
           -webkit-overflow-scrolling: touch;
           scrollbar-width: none;
-          padding: 4px 32px 12px;
+          padding: 4px 24px 12px;
         }
 
         .scroll-row::-webkit-scrollbar {
@@ -188,7 +179,10 @@ export default function WatchedSection({ items, mediaType }: Props) {
 
         @media (max-width: 480px) {
           .section-header { padding: 0 16px; }
-          .scroll-row { padding: 4px 16px 12px; }
+          .scroll-row {
+            padding: 4px 16px 12px;
+            scroll-padding-left: 16px;
+          }
           .card-wrap { width: 120px; }
           .section-title { font-size: 1rem; }
         }
