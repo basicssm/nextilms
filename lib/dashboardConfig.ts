@@ -32,16 +32,15 @@ export const DASHBOARD_SECTIONS: SectionConfig[] = [
     endpoint: (mt) => (mt === "film" ? "/discover/movie" : "/discover/tv"),
     buildParams: (_mt, ids) =>
       withProviders(ids, {
-        sort_by: "vote_average.desc",
-        "vote_average.gte": 8,
-        "vote_count.gte": 500,
+        sort_by: "vote_count.desc",
+        "vote_average.gte": 7.5,
+        "vote_count.gte": 5000,
       }),
   },
   {
     id: "populares",
     title: "Más populares ahora",
     emoji: "🔥",
-    // /discover allows with_watch_providers; /movie/popular does not
     endpoint: (mt) => (mt === "film" ? "/discover/movie" : "/discover/tv"),
     buildParams: (_mt, ids) =>
       withProviders(ids, {
@@ -53,7 +52,6 @@ export const DASHBOARD_SECTIONS: SectionConfig[] = [
     id: "tendencias",
     title: "Tendencias esta semana",
     emoji: "📈",
-    // /trending does not support with_watch_providers; use discover with recent releases
     endpoint: (mt) => (mt === "film" ? "/discover/movie" : "/discover/tv"),
     buildParams: (_mt, ids) => {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000)
@@ -83,11 +81,11 @@ export const DASHBOARD_SECTIONS: SectionConfig[] = [
     title: "Con tus hijos",
     emoji: "🧒",
     endpoint: (mt) => (mt === "film" ? "/discover/movie" : "/discover/tv"),
-    buildParams: (_mt, ids) =>
+    buildParams: (mt, ids) =>
       withProviders(ids, {
-        with_genres: "16|10751",
-        sort_by: "vote_average.desc",
-        "vote_count.gte": 100,
+        with_genres: mt === "series" ? "16|10751|10762" : "16|10751",
+        sort_by: "popularity.desc",
+        "vote_count.gte": 200,
       }),
   },
   {
@@ -98,8 +96,9 @@ export const DASHBOARD_SECTIONS: SectionConfig[] = [
     buildParams: (_mt, ids) =>
       withProviders(ids, {
         with_genres: "10749|18",
-        sort_by: "vote_average.desc",
-        "vote_count.gte": 200,
+        sort_by: "popularity.desc",
+        "vote_average.gte": 6.5,
+        "vote_count.gte": 100,
       }),
   },
   {
@@ -122,20 +121,32 @@ export const DASHBOARD_SECTIONS: SectionConfig[] = [
     endpoint: (mt) => (mt === "film" ? "/discover/movie" : "/discover/tv"),
     buildParams: (_mt, ids) =>
       withProviders(ids, {
-        with_genres: "53|27",
-        sort_by: "vote_average.desc",
-        "vote_count.gte": 200,
+        with_genres: "53|27|28",
+        sort_by: "popularity.desc",
+        "vote_count.gte": 300,
       }),
   },
   {
     id: "accion",
-    title: "Acción y aventura",
+    title: "Acción",
     emoji: "💥",
     endpoint: (mt) => (mt === "film" ? "/discover/movie" : "/discover/tv"),
     buildParams: (_mt, ids) =>
       withProviders(ids, {
-        with_genres: "28|12",
-        sort_by: "vote_average.desc",
+        with_genres: "28",
+        sort_by: "popularity.desc",
+        "vote_count.gte": 500,
+      }),
+  },
+  {
+    id: "aventuras",
+    title: "Aventuras",
+    emoji: "🌍",
+    endpoint: (mt) => (mt === "film" ? "/discover/movie" : "/discover/tv"),
+    buildParams: (_mt, ids) =>
+      withProviders(ids, {
+        with_genres: "12",
+        sort_by: "popularity.desc",
         "vote_count.gte": 300,
       }),
   },
@@ -144,17 +155,23 @@ export const DASHBOARD_SECTIONS: SectionConfig[] = [
     title: "Próximos estrenos en streaming",
     emoji: "📅",
     isUpcoming: true,
-    endpoint: () => "/discover/movie",
-    buildParams: (_mt, ids) => {
+    endpoint: (mt) => (mt === "film" ? "/discover/movie" : "/discover/tv"),
+    buildParams: (mt, ids) => {
       const today = new Date().toISOString().split("T")[0];
-      const in90 = new Date(Date.now() + 90 * 86400000)
+      const in180 = new Date(Date.now() + 180 * 86400000)
         .toISOString()
         .split("T")[0];
+      if (mt === "series") {
+        return withProviders(ids, {
+          "first_air_date.gte": today,
+          "first_air_date.lte": in180,
+          sort_by: "popularity.desc",
+        });
+      }
       return withProviders(ids, {
-        with_release_type: "4",
         "release_date.gte": today,
-        "release_date.lte": in90,
-        sort_by: "release_date.asc",
+        "release_date.lte": in180,
+        sort_by: "popularity.desc",
       });
     },
   },
