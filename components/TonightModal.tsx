@@ -18,42 +18,8 @@ const FALLBACK_POSTER = "https://picsum.photos/id/444/185/278";
 
 type RecommendedItem = WatchlistItem & {
   availableOn: WatchProvider[];
-  runtime?: number;
-  genreIds?: number[];
+  episodesPending?: number;
 };
-
-type MoodFilter = "action" | "drama" | "comedy" | "surprise" | null;
-type TimeFilter = 30 | 90 | 150 | null;
-
-const MOOD_GENRES: Record<NonNullable<MoodFilter>, number[]> = {
-  action:   [28, 12, 53, 10752],
-  drama:    [18, 10749, 36],
-  comedy:   [35, 16, 10751],
-  surprise: [],
-};
-
-const MOOD_LABELS: Record<NonNullable<MoodFilter>, string> = {
-  action:   "Acción",
-  drama:    "Drama",
-  comedy:   "Comedia",
-  surprise: "Sorpréndeme",
-};
-
-const TIME_OPTIONS: { label: string; value: TimeFilter }[] = [
-  { label: "Cualquiera", value: null },
-  { label: "≤30 min",   value: 30   },
-  { label: "≤90 min",   value: 90   },
-  { label: "≤2h 30",    value: 150  },
-];
-
-function shuffleArray<T>(arr: T[]): T[] {
-  const copy = [...arr];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
 
 async function fetchAiredEpisodeCount(filmId: number): Promise<number> {
   try {
@@ -81,41 +47,19 @@ async function fetchAiredEpisodeCount(filmId: number): Promise<number> {
   }
 }
 
-async function fetchItemMeta(
-  filmId: number,
-  mediaType: "film" | "series"
-): Promise<{ runtime?: number; genreIds?: number[] }> {
-  try {
-    const segment = mediaType === "film" ? "movie" : "tv";
-    const res = await fetch(`${API_BASE_URL}/${segment}/${filmId}?api_key=${API_KEY}`);
-    if (!res.ok) return {};
-    const data = await res.json();
-    const genreIds = (data.genres ?? []).map((g: { id: number }) => g.id);
-    const runtime =
-      mediaType === "film"
-        ? data.runtime ?? undefined
-        : data.episode_run_time?.[0] ?? undefined;
-    return { runtime, genreIds };
-  } catch {
-    return {};
-  }
-}
-
 async function filterByPlatform(
   candidates: WatchlistItem[],
   mediaType: "film" | "series",
-  platformIds: Set<number>
+  platformIds: Set<number>,
+  episodesPendingMap?: Map<number, number>
 ): Promise<RecommendedItem[]> {
   const results = await Promise.all(
     candidates.map(async (item) => {
-      const [providers, meta] = await Promise.all([
-        fetchWatchProviders(item.film_id, mediaType),
-        fetchItemMeta(item.film_id, mediaType),
-      ]);
+      const providers = await fetchWatchProviders(item.film_id, mediaType);
       const availableOn = providers.filter((p) => platformIds.has(p.provider_id));
-      return availableOn.length > 0
-        ? ({ ...item, availableOn, runtime: meta.runtime, genreIds: meta.genreIds } as RecommendedItem)
-        : null;
+      if (availableOn.length === 0) return null;
+      const episodesPending = episodesPendingMap?.get(item.film_id);
+      return { ...item, availableOn, episodesPending } as RecommendedItem;
     })
   );
   return results.filter((r): r is RecommendedItem => r !== null);
@@ -165,6 +109,9 @@ function RecCard({ item, onClose }: { item: RecommendedItem; onClose: () => void
         </div>
         <div className="info">
           <p className="title">{item.film_title}</p>
+          {item.episodesPending !== undefined && (
+            <p className="eps-pending">{item.episodesPending} cap. por ver</p>
+          )}
           <PlatformLogos providers={item.availableOn} />
         </div>
       </Link>
@@ -201,6 +148,12 @@ function RecCard({ item, onClose }: { item: RecommendedItem; onClose: () => void
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
+        }
+        .eps-pending {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--gold);
+          line-height: 1.2;
         }
       `}</style>
     </div>
@@ -263,33 +216,7 @@ export default function TonightModal() {
   const [movies, setMovies] = useState<RecommendedItem[]>([]);
   const [seriesWatching, setSeriesWatching] = useState<RecommendedItem[]>([]);
   const [seriesToWatch, setSeriesToWatch] = useState<RecommendedItem[]>([]);
-  const [mood, setMood] = useState<MoodFilter>(null);
-  const [timeLimit, setTimeLimit] = useState<TimeFilter>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-
-  function applyFilters(list: RecommendedItem[], _type: "film" | "series"): RecommendedItem[] {
-    let result = list;
-    if (mood && mood !== "surprise") {
-      const moodGenres = MOOD_GENRES[mood];
-      result = result.filter((item) =>
-        item.genreIds?.some((id) => moodGenres.includes(id))
-      );
-    }
-    if (timeLimit !== null) {
-      result = result.filter((item) => {
-        const rt = item.runtime;
-        return rt === undefined || rt <= timeLimit;
-      });
-    }
-    if (mood === "surprise") {
-      result = shuffleArray(result).slice(0, 4);
-    }
-    return result;
-  }
-
-  const filteredMovies = applyFilters(movies, "film");
-  const filteredWatching = applyFilters(seriesWatching, "series");
-  const filteredSeriesToWatch = applyFilters(seriesToWatch, "series");
 
   useEffect(() => {
     if (open) {
@@ -327,6 +254,8 @@ export default function TonightModal() {
     );
 
     let activeWatchingCandidates = watchingCandidates;
+    const episodesPendingMap = new Map<number, number>();
+
     if (watchingCandidates.length > 0) {
       const seriesIds = watchingCandidates.map((item) => item.film_id);
       const [airedCounts, { data: watchedRows }] = await Promise.all([
@@ -351,13 +280,18 @@ export default function TonightModal() {
         const aired = airedCounts[i];
         if (aired === 0) return true;
         const watched = watchedCountBySeries.get(item.film_id) ?? 0;
-        return watched < aired;
+        const pending = aired - watched;
+        if (pending > 0) {
+          episodesPendingMap.set(item.film_id, pending);
+          return true;
+        }
+        return false;
       });
     }
 
     const [filteredMovies, filteredWatching, filteredSeriesQueue] = await Promise.all([
       filterByPlatform(movieCandidates, "film", platformIds),
-      filterByPlatform(activeWatchingCandidates, "series", platformIds),
+      filterByPlatform(activeWatchingCandidates, "series", platformIds, episodesPendingMap),
       filterByPlatform(seriesToWatchCandidates, "series", platformIds),
     ]);
 
@@ -369,8 +303,6 @@ export default function TonightModal() {
 
   const handleClose = useCallback(() => {
     setOpen(false);
-    setMood(null);
-    setTimeLimit(null);
   }, []);
 
   function handleOverlayClick(e: React.MouseEvent) {
@@ -378,8 +310,7 @@ export default function TonightModal() {
   }
 
   const hasNoPlatforms = platformIds.size === 0;
-  const hasBaseResults = movies.length + seriesWatching.length + seriesToWatch.length > 0;
-  const hasResults = filteredMovies.length + filteredWatching.length + filteredSeriesToWatch.length > 0;
+  const hasResults = movies.length + seriesWatching.length + seriesToWatch.length > 0;
 
   if (!user) return null;
 
@@ -428,7 +359,7 @@ export default function TonightModal() {
                     para ver recomendaciones.
                   </p>
                 </div>
-              ) : !hasBaseResults ? (
+              ) : !hasResults ? (
                 <div className="state-center">
                   <p className="state-text">
                     Ningún título de tu lista está disponible en tus plataformas esta noche.
@@ -438,53 +369,11 @@ export default function TonightModal() {
                   </p>
                 </div>
               ) : (
-                <>
-                  {/* Filtros de humor y tiempo */}
-                  <div className="filter-bar">
-                    <div className="filter-group">
-                      <span className="filter-label">Estado de ánimo</span>
-                      <div className="filter-chips">
-                        {(["action", "drama", "comedy", "surprise"] as NonNullable<MoodFilter>[]).map((m) => (
-                          <button
-                            key={m}
-                            className={`filter-chip${mood === m ? " active" : ""}`}
-                            onClick={() => setMood(mood === m ? null : m)}
-                          >
-                            {MOOD_LABELS[m]}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="filter-group">
-                      <span className="filter-label">Tiempo disponible</span>
-                      <div className="filter-chips">
-                        {TIME_OPTIONS.map((opt) => (
-                          <button
-                            key={String(opt.value)}
-                            className={`filter-chip${timeLimit === opt.value ? " active" : ""}`}
-                            onClick={() => setTimeLimit(opt.value)}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {!hasResults ? (
-                    <div className="state-center" style={{ paddingTop: 24 }}>
-                      <p className="state-text">
-                        Ningún título encaja con estos filtros. Prueba otra combinación.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="sections">
-                      <Section title="Películas por ver" items={filteredMovies} onClose={handleClose} />
-                      <Section title="Series que estás viendo" items={filteredWatching} onClose={handleClose} />
-                      <Section title="Series pendientes" items={filteredSeriesToWatch} onClose={handleClose} />
-                    </div>
-                  )}
-                </>
+                <div className="sections">
+                  <Section title="Películas por ver" items={movies} onClose={handleClose} />
+                  <Section title="Series que estás viendo" items={seriesWatching} onClose={handleClose} />
+                  <Section title="Series pendientes" items={seriesToWatch} onClose={handleClose} />
+                </div>
               )}
             </div>
           </div>
@@ -638,63 +527,6 @@ export default function TonightModal() {
           display: flex;
           flex-direction: column;
           gap: 28px;
-        }
-
-        /* ── Filter bar ───────────────────────────── */
-        .filter-bar {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          padding: 14px 16px;
-          background: var(--bg);
-          border: 1px solid var(--border);
-          border-radius: var(--radius-md);
-          flex-shrink: 0;
-        }
-
-        .filter-group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .filter-label {
-          font-size: 10px;
-          font-weight: 700;
-          color: var(--text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-        }
-
-        .filter-chips {
-          display: flex;
-          gap: 6px;
-          flex-wrap: wrap;
-        }
-
-        .filter-chip {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          color: var(--text-muted);
-          font-family: var(--font-body);
-          font-size: 12px;
-          font-weight: 500;
-          padding: 5px 13px;
-          border-radius: 20px;
-          cursor: pointer;
-          transition: all 0.15s;
-          white-space: nowrap;
-        }
-
-        .filter-chip:hover:not(.active) {
-          border-color: var(--border-hover);
-          color: var(--text);
-        }
-
-        .filter-chip.active {
-          background: rgba(212, 175, 55, 0.12);
-          border-color: rgba(212, 175, 55, 0.45);
-          color: var(--gold);
         }
 
         /* ── States ───────────────────────────────── */
