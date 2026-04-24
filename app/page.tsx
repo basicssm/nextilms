@@ -31,6 +31,9 @@ function HomeContent() {
 
   const [mediaType, setMediaType] = useState<MediaType>(initMediaType);
   const [selectedPlatformIds, setSelectedPlatformIds] = useState<number[]>([]);
+  const selectedPlatforms = platforms.filter((p) =>
+    selectedPlatformIds.includes(p.provider_id)
+  );
   const [searchText, setSearchText] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -176,12 +179,17 @@ function HomeContent() {
             section={section}
             mediaType={mediaType}
             selectedPlatformIds={selectedPlatformIds}
+            selectedPlatforms={selectedPlatforms}
             watchlistMap={watchlistMap}
             seenIds={seenIds}
           />
         ))}
         {user && (
-          <WatchedSection items={watchlistItems} mediaType={mediaType} />
+          <WatchedSection
+            items={watchlistItems}
+            mediaType={mediaType}
+            selectedPlatformIds={selectedPlatformIds}
+          />
         )}
       </main>
 

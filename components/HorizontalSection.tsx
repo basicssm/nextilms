@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, MutableRefObject } from "react";
 import useSWR from "swr";
-import { Film as FilmType, WatchlistStatus } from "@/types";
+import { Film as FilmType, WatchlistStatus, UserPlatform } from "@/types";
 import { SectionConfig } from "@/lib/dashboardConfig";
 import { normalizeItem, buildSectionUrl } from "@/utils/tmdb";
 import Film from "@/components/Film";
@@ -28,6 +28,7 @@ type Props = {
   section: SectionConfig;
   mediaType: "film" | "series";
   selectedPlatformIds: number[];
+  selectedPlatforms?: UserPlatform[];
   watchlistMap: Map<number, WatchlistStatus>;
   seenIds: MutableRefObject<Set<string>>;
 };
@@ -36,6 +37,7 @@ export default function HorizontalSection({
   section,
   mediaType,
   selectedPlatformIds,
+  selectedPlatforms,
   watchlistMap,
   seenIds,
 }: Props) {
@@ -107,6 +109,17 @@ export default function HorizontalSection({
     setNextPage((p) => p + 1);
     setIsFetchingMore(false);
   }, [moreData, seenIds]);
+
+  // Auto-load next page when visible items drop below 5
+  useEffect(() => {
+    if (!loaded || isFetchingMore || nextPage > totalPages) return;
+    const count = [...displayFilms, ...extraItems].filter((f) => {
+      const s = watchlistMap.get(Number(f.id));
+      return s !== "watched" && s !== "watching";
+    }).length;
+    if (count >= 5) return;
+    setIsFetchingMore(true);
+  }, [loaded, displayFilms, extraItems, watchlistMap, nextPage, totalPages, isFetchingMore]);
 
   function handleScroll() {
     const el = scrollRef.current;
@@ -194,7 +207,13 @@ export default function HorizontalSection({
             : visibleFilms.map((film) =>
                 section.isUpcoming ? (
                   <div key={film.id} className="card-wrap card-wrap-upcoming">
-                    <UpcomingCard film={film} />
+                    <UpcomingCard
+                      film={film}
+                      platforms={selectedPlatforms?.map((p) => ({
+                        name: p.provider_name,
+                        logo_path: p.logo_path,
+                      }))}
+                    />
                   </div>
                 ) : (
                   <div key={film.id} className="card-wrap">

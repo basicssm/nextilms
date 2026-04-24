@@ -3,11 +3,19 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Film } from "@/types";
-import { TMDB_POSTER_SM } from "@/utils/constants";
+import { TMDB_POSTER_SM, TMDB_LOGO_ORIGINAL } from "@/utils/constants";
 
 const FALLBACK = "https://picsum.photos/id/444/200/300";
 
-export default function UpcomingCard({ film }: { film: Film }) {
+type PlatformInfo = { name: string; logo_path: string };
+
+export default function UpcomingCard({
+  film,
+  platforms,
+}: {
+  film: Film;
+  platforms?: PlatformInfo[];
+}) {
   const { id, title, poster_path, release_date } = film;
   const src = poster_path ? `${TMDB_POSTER_SM}${poster_path}` : FALLBACK;
   const href = `/film/${id}`;
@@ -38,6 +46,21 @@ export default function UpcomingCard({ film }: { film: Film }) {
           <div className="date-badge">
             <span className="day">{day}</span>
             <span className="month">{month}</span>
+          </div>
+        )}
+        {platforms && platforms.length > 0 && (
+          <div className="platforms">
+            {platforms.slice(0, 3).map((p) => (
+              <Image
+                key={p.name}
+                src={`${TMDB_LOGO_ORIGINAL}${p.logo_path}`}
+                alt={p.name}
+                width={20}
+                height={20}
+                style={{ objectFit: "cover" }}
+                className="platform-logo"
+              />
+            ))}
           </div>
         )}
         <p className="title">{title}</p>
@@ -103,6 +126,18 @@ export default function UpcomingCard({ film }: { film: Film }) {
           color: var(--text-muted);
           text-transform: uppercase;
           letter-spacing: 0.06em;
+        }
+
+        .platforms {
+          display: flex;
+          gap: 4px;
+          margin-top: 6px;
+          align-items: center;
+        }
+
+        .platforms :global(.platform-logo) {
+          border-radius: 4px;
+          flex-shrink: 0;
         }
 
         .title {

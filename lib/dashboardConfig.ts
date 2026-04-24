@@ -165,13 +165,13 @@ export const DASHBOARD_SECTIONS: SectionConfig[] = [
         return withProviders(ids, {
           "first_air_date.gte": today,
           "first_air_date.lte": in180,
-          sort_by: "popularity.desc",
+          sort_by: "first_air_date.asc",
         });
       }
       return withProviders(ids, {
         "release_date.gte": today,
         "release_date.lte": in180,
-        sort_by: "popularity.desc",
+        sort_by: "release_date.asc",
       });
     },
   },
