@@ -47,6 +47,8 @@ export default function HorizontalSection({
   const [displayFilms, setDisplayFilms] = useState<FilmType[]>([]);
   const [loaded, setLoaded] = useState(false);
 
+  const scrollKey = `hscroll-${section.id}-${mediaType}-${selectedPlatformIds.join(",")}`;
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -84,11 +86,31 @@ export default function HorizontalSection({
     if (!el) return;
     setCanScrollLeft(el.scrollLeft > 2);
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    try {
+      sessionStorage.setItem(scrollKey, String(el.scrollLeft));
+    } catch {}
   }
 
   useEffect(() => {
     handleScroll();
   }, [displayFilms]);
+
+  // Restore horizontal scroll once films are loaded
+  useEffect(() => {
+    if (!loaded || !scrollRef.current) return;
+    try {
+      const saved = sessionStorage.getItem(scrollKey);
+      if (saved) {
+        const x = parseInt(saved, 10);
+        if (x > 0) {
+          scrollRef.current.scrollLeft = x;
+          handleScroll();
+        }
+      }
+    } catch {}
+    // scrollKey is stable within a component instance (remounts when it changes)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded]);
 
   function doScrollLeft() {
     scrollRef.current?.scrollBy({
