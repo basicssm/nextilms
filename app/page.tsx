@@ -8,10 +8,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "@/context/AuthContext";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
-import { useWatchlistMap } from "@/hooks/useWatchlist";
+import { useWatchlistMap, useFullWatchlist } from "@/hooks/useWatchlist";
 import TonightModal from "@/components/TonightModal";
 import PlatformFilterBar from "@/components/PlatformFilterBar";
 import HorizontalSection from "@/components/HorizontalSection";
+import WatchedSection from "@/components/WatchedSection";
 import { DASHBOARD_SECTIONS } from "@/lib/dashboardConfig";
 
 type MediaType = "film" | "series";
@@ -22,6 +23,7 @@ function HomeContent() {
   const { user, loading: authLoading } = useAuth();
   const { platforms, loading: platformsLoading } = useUserPlatforms();
   const watchlistMap = useWatchlistMap();
+  const { items: watchlistItems } = useFullWatchlist();
 
   const initMediaType = (
     searchParams.get("mediaType") === "series" ? "series" : "film"
@@ -132,6 +134,9 @@ function HomeContent() {
             seenIds={seenIds}
           />
         ))}
+        {user && (
+          <WatchedSection items={watchlistItems} mediaType={mediaType} />
+        )}
       </main>
 
       <style jsx>{`

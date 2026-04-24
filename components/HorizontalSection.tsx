@@ -104,8 +104,14 @@ export default function HorizontalSection({
     });
   }
 
+  // Remove titles the user has already watched or is watching
+  const visibleFilms = displayFilms.filter((f) => {
+    const status = watchlistMap.get(Number(f.id));
+    return status !== "watched" && status !== "watching";
+  });
+
   // Hide section completely once loaded with no results
-  if (loaded && displayFilms.length === 0) return null;
+  if (loaded && visibleFilms.length === 0) return null;
 
   const skeletons = Array.from({ length: 8 });
 
@@ -138,7 +144,7 @@ export default function HorizontalSection({
                   <div className="skeleton-card skeleton" />
                 </div>
               ))
-            : displayFilms.map((film) =>
+            : visibleFilms.map((film) =>
                 section.isUpcoming ? (
                   <div key={film.id} className="card-wrap card-wrap-upcoming">
                     <UpcomingCard film={film} />
