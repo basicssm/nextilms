@@ -87,7 +87,7 @@ export default function PlatformFilterBar({
       <style jsx>{`
         .platform-bar-wrap {
           position: sticky;
-          top: 64px;
+          top: calc(64px + env(safe-area-inset-top));
           z-index: 20;
           background: var(--bg);
           border-bottom: 1px solid var(--border);
@@ -176,7 +176,7 @@ export default function PlatformFilterBar({
             padding: 2px 14px;
           }
           .platform-bar-wrap {
-            top: 48px;
+            top: calc(48px + env(safe-area-inset-top));
           }
         }
       `}</style>
