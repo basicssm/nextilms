@@ -51,6 +51,10 @@ export default function NavUserMenu() {
           <div className="dropdown">
             {user ? (
               <>
+                <Link href="/" className="menu-item" onClick={() => setMenuOpen(false)}>
+                  <span className="item-icon">⌂</span> Inicio
+                </Link>
+                <div className="divider" />
                 <div className="user-email">{user.email}</div>
                 <div className="divider" />
                 <Link href="/my-list" className="menu-item" onClick={() => setMenuOpen(false)}>
@@ -72,6 +76,10 @@ export default function NavUserMenu() {
               </>
             ) : (
               <>
+                <Link href="/" className="menu-item" onClick={() => setMenuOpen(false)}>
+                  <span className="item-icon">⌂</span> Inicio
+                </Link>
+                <div className="divider" />
                 <button
                   className="menu-item menu-btn login-btn"
                   onClick={() => { setShowAuth(true); setMenuOpen(false); }}
@@ -88,8 +96,8 @@ export default function NavUserMenu() {
 
       <style jsx>{`
         .placeholder {
-          width: 40px;
-          height: 40px;
+          width: 48px;
+          height: 48px;
           flex-shrink: 0;
         }
         .menu-container {
@@ -102,8 +110,8 @@ export default function NavUserMenu() {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 40px;
-          height: 40px;
+          width: 48px;
+          height: 48px;
           background: var(--surface);
           border: 1px solid var(--border-hover);
           border-radius: var(--radius-md);
@@ -156,14 +164,14 @@ export default function NavUserMenu() {
           flex-direction: column;
           justify-content: center;
           align-items: center;
-          gap: 4px;
+          gap: 5px;
           width: 100%;
           height: 100%;
         }
         .line {
           display: block;
-          width: 16px;
-          height: 1.5px;
+          width: 20px;
+          height: 2px;
           background: var(--text-muted);
           border-radius: 2px;
           transition: opacity 0.15s;

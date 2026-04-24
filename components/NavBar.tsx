@@ -30,7 +30,16 @@ export default function NavBar({ children }: { children?: ReactNode }) {
           position: sticky;
           top: 0;
           z-index: 30;
-          transition: all 0.25s ease;
+          padding-top: env(safe-area-inset-top);
+          background: rgba(10, 10, 15, 0.72);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-bottom: 1px solid var(--border);
+          transition: background 0.25s ease, border-color 0.25s ease;
+        }
+        header.scrolled {
+          background: rgba(10, 10, 15, 0.92);
+          border-bottom-color: var(--border-hover);
         }
         .nav {
           display: grid;
@@ -38,16 +47,10 @@ export default function NavBar({ children }: { children?: ReactNode }) {
           align-items: center;
           height: 64px;
           padding: 0 24px;
-          background: rgba(10, 10, 15, 0.72);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border-bottom: 1px solid var(--border);
-          transition: height 0.25s ease, background 0.25s ease;
+          transition: height 0.25s ease;
         }
         header.scrolled .nav {
           height: 52px;
-          background: rgba(10, 10, 15, 0.92);
-          border-bottom-color: var(--border-hover);
         }
         .nav-left {
           display: flex;
