@@ -40,6 +40,52 @@ function HomeContent() {
     seenIds.current = new Set();
   }, [mediaType, selectedPlatformIds]);
 
+  // Restore selectedPlatformIds from sessionStorage on mount
+  const platformIdsRestored = useRef(false);
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("dashboard-platform-ids");
+      if (saved) {
+        const ids = JSON.parse(saved);
+        if (Array.isArray(ids)) setSelectedPlatformIds(ids);
+      }
+    } catch {}
+    platformIdsRestored.current = true;
+  }, []);
+
+  // Save selectedPlatformIds to sessionStorage on change (skip until restored)
+  useEffect(() => {
+    if (!platformIdsRestored.current) return;
+    try {
+      sessionStorage.setItem(
+        "dashboard-platform-ids",
+        JSON.stringify(selectedPlatformIds)
+      );
+    } catch {}
+  }, [selectedPlatformIds]);
+
+  // Save vertical scroll position on scroll
+  useEffect(() => {
+    const save = () => {
+      try {
+        sessionStorage.setItem("dashboard-scroll-y", String(window.scrollY));
+      } catch {}
+    };
+    window.addEventListener("scroll", save, { passive: true });
+    return () => window.removeEventListener("scroll", save);
+  }, []);
+
+  // Restore vertical scroll position on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("dashboard-scroll-y");
+      if (saved) {
+        const y = parseInt(saved, 10);
+        if (y > 0) requestAnimationFrame(() => window.scrollTo(0, y));
+      }
+    } catch {}
+  }, []);
+
   function switchMediaType(type: MediaType) {
     setMediaType(type);
     router.replace(`/?mediaType=${type}`);
