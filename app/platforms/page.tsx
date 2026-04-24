@@ -182,6 +182,100 @@ export default function PlatformsPage() {
             </svg>
           </span>
         )}
+        <style jsx>{`
+          .card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            height: 120px;
+            padding: 12px 10px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text);
+            cursor: pointer;
+            text-align: center;
+            user-select: none;
+            transition: border-color 0.2s, background 0.2s;
+          }
+
+          .card:hover:not(.disabled):not(.selected) {
+            border-color: var(--border-hover);
+            background: var(--surface-hover);
+          }
+
+          .card.selected {
+            border-color: var(--accent);
+            background: var(--watching-bg);
+            color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.3);
+          }
+
+          .card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+
+          .logo-wrap {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .busy-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .spin {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: rotate 0.7s linear infinite;
+          }
+
+          @keyframes rotate {
+            to { transform: rotate(360deg); }
+          }
+
+          .card-name {
+            font-size: 11px;
+            font-weight: 500;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+
+          .check {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+        `}</style>
       </div>
     );
   }
@@ -519,100 +613,6 @@ export default function PlatformsPage() {
         @keyframes fadeDown {
           from { opacity: 0; transform: translateY(-8px); }
           to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ── Cards ── */
-        .card {
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          height: 120px;
-          padding: 12px 10px;
-          background: var(--surface);
-          border: 2px solid var(--border);
-          border-radius: var(--radius-md);
-          color: var(--text);
-          cursor: pointer;
-          text-align: center;
-          user-select: none;
-          transition: border-color 0.2s, background 0.2s;
-        }
-
-        .card:hover:not(.disabled):not(.selected) {
-          border-color: var(--border-hover);
-          background: var(--surface-hover);
-        }
-
-        .card.selected {
-          border-color: var(--accent);
-          background: var(--watching-bg);
-          color: var(--accent);
-          box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.3);
-        }
-
-        .card.disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .logo-wrap {
-          position: relative;
-          width: 56px;
-          height: 56px;
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .busy-overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.55);
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .spin {
-          width: 18px;
-          height: 18px;
-          border: 2px solid rgba(255, 255, 255, 0.2);
-          border-top-color: white;
-          border-radius: 50%;
-          animation: rotate 0.7s linear infinite;
-        }
-
-        @keyframes rotate {
-          to { transform: rotate(360deg); }
-        }
-
-        .card-name {
-          font-size: 11px;
-          font-weight: 500;
-          line-height: 1.3;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        .check {
-          position: absolute;
-          top: 6px;
-          right: 6px;
-          width: 18px;
-          height: 18px;
-          background: var(--accent);
-          color: #fff;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
 
         /* ── Show more ── */

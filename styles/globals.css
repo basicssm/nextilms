@@ -15,6 +15,7 @@
   --accent-2: #ff6584;
   --accent-gradient: linear-gradient(135deg, #6c63ff 0%, #ff6584 100%);
   --accent-glow: rgba(108, 99, 255, 0.25);
+  --gold: #d4af37;
 
   /* ── Texto ────────────────────────────────────── */
   --text: #f0f0f8;
