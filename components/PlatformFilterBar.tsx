@@ -107,7 +107,7 @@ export default function PlatformFilterBar({
           display: none;
         }
 
-        .chip {
+        :global(.chip) {
           display: inline-flex;
           align-items: center;
           gap: 6px;
@@ -126,39 +126,39 @@ export default function PlatformFilterBar({
           text-decoration: none;
         }
 
-        .chip:hover:not(.active) {
+        :global(.chip:hover:not(.active)) {
           border-color: var(--border-hover);
           color: var(--text);
           background: var(--surface-hover);
         }
 
-        .chip.active {
+        :global(.chip.active) {
           background: rgba(108, 99, 255, 0.12);
           border-color: rgba(108, 99, 255, 0.4);
           color: var(--accent);
         }
 
-        .chip-todas {
+        :global(.chip-todas) {
           min-width: 60px;
           justify-content: center;
         }
 
-        .chip-prompt {
+        :global(.chip-prompt) {
           border-color: rgba(108, 99, 255, 0.2);
           color: var(--text-muted);
         }
 
-        .chip-prompt:hover {
+        :global(.chip-prompt:hover) {
           border-color: rgba(108, 99, 255, 0.5);
           color: var(--accent);
           background: rgba(108, 99, 255, 0.08);
         }
 
-        .prompt-icon {
+        :global(.prompt-icon) {
           font-size: 14px;
         }
 
-        .platform-name {
+        :global(.platform-name) {
           max-width: 90px;
           overflow: hidden;
           text-overflow: ellipsis;
