@@ -21,17 +21,15 @@ export function normalizeItem(item: {
   };
 }
 
+// Manual URL building (avoids URLSearchParams encoding | as %7C, which TMDB needs for with_genres/with_watch_providers)
 export function buildSectionUrl(
   endpoint: string,
   params: Record<string, string | number>
 ): string {
   const base = `${API_BASE_URL}${endpoint}`;
-  const query = new URLSearchParams({
-    api_key: API_KEY,
-    language: "es-ES",
-    ...Object.fromEntries(
-      Object.entries(params).map(([k, v]) => [k, String(v)])
-    ),
-  });
-  return `${base}?${query.toString()}`;
+  const fixed = `api_key=${API_KEY}&language=es-ES`;
+  const extra = Object.entries(params)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${v}`)
+    .join("&");
+  return extra ? `${base}?${fixed}&${extra}` : `${base}?${fixed}`;
 }

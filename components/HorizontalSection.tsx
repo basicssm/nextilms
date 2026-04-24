@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, MutableRefObject } from "react";
 import useSWR from "swr";
 import { Film as FilmType, WatchlistStatus } from "@/types";
 import { SectionConfig } from "@/lib/dashboardConfig";
@@ -14,11 +14,22 @@ const SCROLL_CARDS = 3;
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+type RawItem = {
+  id: string | number;
+  title?: string;
+  name?: string;
+  poster_path: string;
+  vote_average: number;
+  release_date?: string;
+  first_air_date?: string;
+};
+
 type Props = {
   section: SectionConfig;
   mediaType: "film" | "series";
   selectedPlatformIds: number[];
   watchlistMap: Map<number, WatchlistStatus>;
+  seenIds: MutableRefObject<Set<string>>;
 };
 
 export default function HorizontalSection({
@@ -26,12 +37,15 @@ export default function HorizontalSection({
   mediaType,
   selectedPlatformIds,
   watchlistMap,
+  seenIds,
 }: Props) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [displayFilms, setDisplayFilms] = useState<FilmType[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -53,7 +67,17 @@ export default function HorizontalSection({
     dedupingInterval: 300_000,
   });
 
-  const films: FilmType[] = (data?.results ?? []).map(normalizeItem);
+  // Deduplicate against already-shown films across sections
+  useEffect(() => {
+    if (!data) return;
+    const all: FilmType[] = (data.results ?? []).map((item: RawItem) =>
+      normalizeItem(item)
+    );
+    const unique = all.filter((f) => !seenIds.current.has(f.id));
+    unique.forEach((f) => seenIds.current.add(f.id));
+    setDisplayFilms(unique);
+    setLoaded(true);
+  }, [data, seenIds]);
 
   function handleScroll() {
     const el = scrollRef.current;
@@ -64,24 +88,26 @@ export default function HorizontalSection({
 
   useEffect(() => {
     handleScroll();
-  }, [films]);
+  }, [displayFilms]);
 
-  function scrollLeft() {
+  function doScrollLeft() {
     scrollRef.current?.scrollBy({
       left: -(CARD_WIDTH + CARD_GAP) * SCROLL_CARDS,
       behavior: "smooth",
     });
   }
 
-  function scrollRight() {
+  function doScrollRight() {
     scrollRef.current?.scrollBy({
       left: (CARD_WIDTH + CARD_GAP) * SCROLL_CARDS,
       behavior: "smooth",
     });
   }
 
+  // Hide section completely once loaded with no results
+  if (loaded && displayFilms.length === 0) return null;
+
   const skeletons = Array.from({ length: 8 });
-  const isEmpty = !isLoading && visible && films.length === 0;
 
   return (
     <div ref={sectionRef} className="section">
@@ -98,27 +124,21 @@ export default function HorizontalSection({
         {canScrollLeft && (
           <button
             className="arrow arrow-left"
-            onClick={scrollLeft}
+            onClick={doScrollLeft}
             aria-label="Desplazar izquierda"
           >
             ‹
           </button>
         )}
 
-        <div
-          ref={scrollRef}
-          className="scroll-row"
-          onScroll={handleScroll}
-        >
+        <div ref={scrollRef} className="scroll-row" onScroll={handleScroll}>
           {!visible || isLoading
             ? skeletons.map((_, i) => (
                 <div key={i} className="card-wrap">
                   <div className="skeleton-card skeleton" />
                 </div>
               ))
-            : isEmpty
-            ? null
-            : films.map((film) =>
+            : displayFilms.map((film) =>
                 section.isUpcoming ? (
                   <div key={film.id} className="card-wrap card-wrap-upcoming">
                     <UpcomingCard film={film} />
@@ -138,7 +158,7 @@ export default function HorizontalSection({
         {canScrollRight && (
           <button
             className="arrow arrow-right"
-            onClick={scrollRight}
+            onClick={doScrollRight}
             aria-label="Desplazar derecha"
           >
             ›
@@ -146,24 +166,18 @@ export default function HorizontalSection({
         )}
       </div>
 
-      {isEmpty && (
-        <p className="empty-msg">
-          Sin resultados para los filtros actuales
-        </p>
-      )}
-
       <style jsx>{`
         .section {
           display: flex;
           flex-direction: column;
           gap: 12px;
+          max-width: 1400px;
+          margin: 0 auto;
+          width: 100%;
         }
 
         .section-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 24px;
+          padding: 0 32px;
         }
 
         .section-title {
@@ -183,7 +197,7 @@ export default function HorizontalSection({
           line-height: 1;
         }
 
-        /* ── Scroll container + arrows ── */
+        /* ── Scroll ── */
         .scroll-container {
           position: relative;
         }
@@ -195,7 +209,7 @@ export default function HorizontalSection({
           scroll-snap-type: x mandatory;
           -webkit-overflow-scrolling: touch;
           scrollbar-width: none;
-          padding: 4px 24px 12px;
+          padding: 4px 32px 12px;
         }
 
         .scroll-row::-webkit-scrollbar {
@@ -218,10 +232,10 @@ export default function HorizontalSection({
           border-radius: 14px;
         }
 
-        /* ── Arrow buttons ── */
+        /* ── Arrows ── */
         .arrow {
           position: absolute;
-          top: 50%;
+          top: 40%;
           transform: translateY(-50%);
           z-index: 10;
           width: 36px;
@@ -251,33 +265,25 @@ export default function HorizontalSection({
         }
 
         .arrow-left {
-          left: 4px;
+          left: 6px;
         }
 
         .arrow-right {
-          right: 4px;
+          right: 6px;
         }
 
-        /* Hide arrows on touch devices */
         @media (hover: none) {
           .arrow {
             display: none;
           }
         }
 
-        .empty-msg {
-          padding: 0 24px;
-          color: var(--text-subtle);
-          font-size: 13px;
-          font-family: var(--font-body);
-        }
-
         @media (max-width: 480px) {
           .section-header {
-            padding: 0 14px;
+            padding: 0 16px;
           }
           .scroll-row {
-            padding: 4px 14px 12px;
+            padding: 4px 16px 12px;
           }
           .card-wrap {
             width: 120px;

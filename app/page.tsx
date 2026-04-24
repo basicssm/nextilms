@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useState, ChangeEvent } from "react";
+import { useState, useRef, useEffect, ChangeEvent } from "react";
 import NavBar from "@/components/NavBar";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -31,6 +31,12 @@ function HomeContent() {
   const [selectedPlatformIds, setSelectedPlatformIds] = useState<number[]>([]);
   const [searchText, setSearchText] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+
+  // Shared seen-IDs ref for cross-section deduplication; reset when filters change
+  const seenIds = useRef(new Set<string>());
+  useEffect(() => {
+    seenIds.current = new Set();
+  }, [mediaType, selectedPlatformIds]);
 
   function switchMediaType(type: MediaType) {
     setMediaType(type);
@@ -118,11 +124,12 @@ function HomeContent() {
       <main className="dashboard">
         {DASHBOARD_SECTIONS.map((section) => (
           <HorizontalSection
-            key={`${section.id}-${mediaType}`}
+            key={`${section.id}-${mediaType}-${selectedPlatformIds.join(",")}`}
             section={section}
             mediaType={mediaType}
             selectedPlatformIds={selectedPlatformIds}
             watchlistMap={watchlistMap}
+            seenIds={seenIds}
           />
         ))}
       </main>

@@ -41,16 +41,30 @@ export const DASHBOARD_SECTIONS: SectionConfig[] = [
     id: "populares",
     title: "Más populares ahora",
     emoji: "🔥",
-    endpoint: (mt) => (mt === "film" ? "/movie/popular" : "/tv/popular"),
-    buildParams: () => ({}),
+    // /discover allows with_watch_providers; /movie/popular does not
+    endpoint: (mt) => (mt === "film" ? "/discover/movie" : "/discover/tv"),
+    buildParams: (_mt, ids) =>
+      withProviders(ids, {
+        sort_by: "popularity.desc",
+        "vote_count.gte": 20,
+      }),
   },
   {
     id: "tendencias",
     title: "Tendencias esta semana",
     emoji: "📈",
-    endpoint: (mt) =>
-      mt === "film" ? "/trending/movie/week" : "/trending/tv/week",
-    buildParams: () => ({}),
+    // /trending does not support with_watch_providers; use discover with recent releases
+    endpoint: (mt) => (mt === "film" ? "/discover/movie" : "/discover/tv"),
+    buildParams: (_mt, ids) => {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000)
+        .toISOString()
+        .split("T")[0];
+      return withProviders(ids, {
+        sort_by: "popularity.desc",
+        "primary_release_date.gte": thirtyDaysAgo,
+        "vote_count.gte": 5,
+      });
+    },
   },
   {
     id: "para_reir",
