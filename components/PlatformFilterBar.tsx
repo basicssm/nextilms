@@ -101,9 +101,6 @@ export default function PlatformFilterBar({
           -webkit-overflow-scrolling: touch;
           scrollbar-width: none;
           padding: 2px 24px;
-          white-space: nowrap;
-          min-width: max-content;
-          width: 100%;
         }
 
         .platform-bar::-webkit-scrollbar {
