@@ -2,21 +2,28 @@
 
 import { useRef, useState, useEffect, useMemo } from "react";
 import { WatchlistItem, Film as FilmType } from "@/types";
+import { API_KEY, API_BASE_URL } from "@/apiconfig";
 import Film from "@/components/Film";
 
 const CARD_WIDTH = 140;
 const CARD_GAP = 12;
 const SCROLL_CARDS = 3;
 
+// Session-level cache so navigating back doesn't re-fetch
+const providerCache = new Map<string, number[]>();
+
 type Props = {
   items: WatchlistItem[];
   mediaType: "film" | "series";
+  selectedPlatformIds: number[];
 };
 
-export default function WatchedSection({ items, mediaType }: Props) {
+export default function WatchedSection({ items, mediaType, selectedPlatformIds }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [filteredIds, setFilteredIds] = useState<Set<number> | null>(null);
+  const [providerLoading, setProviderLoading] = useState(false);
 
   const watchedItems = useMemo(() => {
     const filtered = items.filter((item) => {
@@ -33,12 +40,72 @@ export default function WatchedSection({ items, mediaType }: Props) {
   }, [items, mediaType]);
 
   useEffect(() => {
+    if (selectedPlatformIds.length === 0) {
+      setFilteredIds(null);
+      setProviderLoading(false);
+      return;
+    }
+    if (watchedItems.length === 0) {
+      setFilteredIds(new Set());
+      return;
+    }
+
+    const tmdbType = mediaType === "series" ? "tv" : "movie";
+    const uncached = watchedItems
+      .map((i) => i.film_id)
+      .filter((id) => !providerCache.has(`${tmdbType}/${id}`));
+
+    const doFilter = () => {
+      const matching = new Set<number>();
+      for (const item of watchedItems) {
+        const key = `${tmdbType}/${item.film_id}`;
+        const ids = providerCache.get(key) ?? [];
+        if (ids.some((pid) => selectedPlatformIds.includes(pid))) {
+          matching.add(item.film_id);
+        }
+      }
+      setFilteredIds(matching);
+      setProviderLoading(false);
+    };
+
+    if (uncached.length === 0) {
+      doFilter();
+      return;
+    }
+
+    setProviderLoading(true);
+    Promise.all(
+      uncached.map(async (filmId) => {
+        const key = `${tmdbType}/${filmId}`;
+        try {
+          const resp = await fetch(
+            `${API_BASE_URL}/${tmdbType}/${filmId}/watch/providers?api_key=${API_KEY}`
+          );
+          const data = await resp.json();
+          const flatrate: Array<{ provider_id: number }> =
+            data.results?.ES?.flatrate ?? [];
+          providerCache.set(key, flatrate.map((p) => p.provider_id));
+        } catch {
+          providerCache.set(key, []);
+        }
+      })
+    ).then(doFilter);
+  }, [watchedItems, selectedPlatformIds, mediaType]);
+
+  useEffect(() => {
     handleScroll();
   }, [watchedItems.length]);
 
-  if (watchedItems.length === 0) return null;
+  if (providerLoading) return null;
 
-  const films: FilmType[] = watchedItems.map((item) => ({
+  const visibleItems =
+    filteredIds !== null
+      ? watchedItems.filter((i) => filteredIds.has(i.film_id))
+      : watchedItems;
+
+  if (visibleItems.length === 0) return null;
+
+  const films: FilmType[] = visibleItems.map((item) => ({
     id: String(item.film_id),
     title: item.film_title,
     poster_path: item.poster_path ?? "",
