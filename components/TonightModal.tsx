@@ -295,9 +295,12 @@ export default function TonightModal() {
       filterByPlatform(seriesToWatchCandidates, "series", platformIds),
     ]);
 
+    const byRecent = (a: RecommendedItem, b: RecommendedItem) =>
+      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+
     setMovies(filteredMovies);
-    setSeriesWatching(filteredWatching);
-    setSeriesToWatch(filteredSeriesQueue);
+    setSeriesWatching([...filteredWatching].sort(byRecent));
+    setSeriesToWatch([...filteredSeriesQueue].sort(byRecent));
     setProcessing(false);
   }, [items, platformIds, user]);
 
