@@ -45,6 +45,7 @@ type PlatformCoverage = {
   logoPath: string;
   count: number;
   pct: number;
+  countWatched: number;
 };
 
 export default function PlatformsPage() {
@@ -63,13 +64,16 @@ export default function PlatformsPage() {
     setAnalyzing(true);
     setCoverage(null);
 
-    const candidates = watchlistItems.filter(
+    const pending = watchlistItems.filter(
       (item) => item.status === "to_watch" || item.status === "watching"
     );
+    const watched = watchlistItems.filter((item) => item.status === "watched");
 
     const counts = new Map<number, number>();
-    await Promise.all(
-      candidates.map(async (item) => {
+    const countsWatched = new Map<number, number>();
+
+    await Promise.all([
+      ...pending.map(async (item) => {
         const itemProviders = await fetchWatchProviders(
           item.film_id,
           item.media_type ?? "film"
@@ -79,10 +83,21 @@ export default function PlatformsPage() {
             counts.set(p.provider_id, (counts.get(p.provider_id) ?? 0) + 1);
           }
         }
-      })
-    );
+      }),
+      ...watched.map(async (item) => {
+        const itemProviders = await fetchWatchProviders(
+          item.film_id,
+          item.media_type ?? "film"
+        );
+        for (const p of itemProviders) {
+          if (platformIds.has(p.provider_id)) {
+            countsWatched.set(p.provider_id, (countsWatched.get(p.provider_id) ?? 0) + 1);
+          }
+        }
+      }),
+    ]);
 
-    const total = candidates.length || 1;
+    const total = pending.length || 1;
     const result: PlatformCoverage[] = platforms
       .map((p) => ({
         providerId: p.provider_id,
@@ -90,6 +105,7 @@ export default function PlatformsPage() {
         logoPath: p.logo_path,
         count: counts.get(p.provider_id) ?? 0,
         pct: Math.round(((counts.get(p.provider_id) ?? 0) / total) * 100),
+        countWatched: countsWatched.get(p.provider_id) ?? 0,
       }))
       .sort((a, b) => b.count - a.count);
 
@@ -123,6 +139,13 @@ export default function PlatformsPage() {
     }
     loadProviders();
   }, []);
+
+  useEffect(() => {
+    if (user && platformIds.size > 0 && watchlistItems.length > 0 && !coverage && !analyzing) {
+      runAnalysis();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, platformIds.size, watchlistItems.length]);
 
   async function handleToggle(provider: TmdbProvider) {
     if (!user || toggling.has(provider.provider_id)) return;
@@ -405,56 +428,128 @@ export default function PlatformsPage() {
                   </div>
                 )}
 
-                {coverage && !analyzing && (
-                  <div className="coverage-list">
-                    {coverage.map((item) => (
-                      <div key={item.providerId} className="coverage-row">
-                        <div className="coverage-platform">
-                          <Image
-                            src={`${LOGO_BASE}${item.logoPath}`}
-                            alt={item.providerName}
-                            width={28}
-                            height={28}
-                            style={{ borderRadius: 6, objectFit: "cover" }}
-                          />
-                          <span className="coverage-name">{item.providerName}</span>
-                        </div>
-                        <div className="coverage-bar-wrap">
-                          <div
-                            className="coverage-bar-fill"
-                            style={{ width: `${Math.max(item.pct, 2)}%` }}
-                          />
-                        </div>
-                        <span className="coverage-stat">
-                          {item.count} {item.count === 1 ? "título" : "títulos"}
-                          <span className="coverage-pct"> · {item.pct}%</span>
-                        </span>
-                      </div>
-                    ))}
+                {coverage && !analyzing && (() => {
+                  const pending = watchlistItems.filter(
+                    (i) => i.status === "to_watch" || i.status === "watching"
+                  );
+                  const totalCoveredCount = Math.min(
+                    coverage.reduce((sum, c) => sum + c.count, 0),
+                    pending.length
+                  );
+                  const overallPct = pending.length > 0
+                    ? Math.round((totalCoveredCount / pending.length) * 100)
+                    : 0;
+                  const uncovered = Math.max(0, pending.length - totalCoveredCount);
+                  const topByWatched = [...coverage].sort((a, b) => b.countWatched - a.countWatched)[0];
+                  const hasWatchedData = topByWatched && topByWatched.countWatched > 0;
 
-                    {coverage.length > 1 && (
-                      <div className="analyzer-insight">
-                        {coverage[0].pct >= 50 ? (
-                          <p>
-                            <strong>{coverage[0].providerName}</strong> cubre el{" "}
-                            <strong>{coverage[0].pct}%</strong> de tu lista pendiente. Es tu plataforma más rentable.
-                          </p>
-                        ) : (
-                          <p>
-                            Tu contenido está distribuido entre varias plataformas. La mayor cobertura la tiene{" "}
-                            <strong>{coverage[0].providerName}</strong> con un {coverage[0].pct}%.
-                          </p>
+                  return (
+                    <>
+                      <div className="kpi-cards">
+                        {/* Plataforma estrella */}
+                        {coverage.length > 0 && coverage[0].count > 0 && (
+                          <div className="kpi-card kpi-star">
+                            <span className="kpi-label">Plataforma estrella</span>
+                            <div className="kpi-main">
+                              <Image
+                                src={`${LOGO_BASE}${coverage[0].logoPath}`}
+                                alt={coverage[0].providerName}
+                                width={32}
+                                height={32}
+                                style={{ borderRadius: 6, objectFit: "cover" }}
+                              />
+                              <span className="kpi-platform-name">{coverage[0].providerName}</span>
+                            </div>
+                            <span className="kpi-value">
+                              {coverage[0].count} {coverage[0].count === 1 ? "título" : "títulos"} · {coverage[0].pct}%
+                            </span>
+                          </div>
                         )}
-                        {coverage[coverage.length - 1].count === 0 && (
-                          <p className="insight-warn">
-                            <strong>{coverage[coverage.length - 1].providerName}</strong> no tiene ningún
-                            título de tu lista pendiente.
-                          </p>
+
+                        {/* Plataforma más consumida */}
+                        {hasWatchedData && (
+                          <div className="kpi-card kpi-used">
+                            <span className="kpi-label">Más usada históricamente</span>
+                            <div className="kpi-main">
+                              <Image
+                                src={`${LOGO_BASE}${topByWatched.logoPath}`}
+                                alt={topByWatched.providerName}
+                                width={32}
+                                height={32}
+                                style={{ borderRadius: 6, objectFit: "cover" }}
+                              />
+                              <span className="kpi-platform-name">{topByWatched.providerName}</span>
+                            </div>
+                            <span className="kpi-value">
+                              {topByWatched.countWatched} {topByWatched.countWatched === 1 ? "título visto" : "títulos vistos"}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Cobertura total + sin cobertura */}
+                        <div className="kpi-card kpi-coverage">
+                          <span className="kpi-label">Cobertura total</span>
+                          <span className="kpi-big">{overallPct}%</span>
+                          <span className="kpi-value">de tu lista pendiente cubierta</span>
+                          {uncovered > 0 && (
+                            <span className="kpi-warn">
+                              {uncovered} {uncovered === 1 ? "título sin plataforma" : "títulos sin plataforma"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="coverage-list">
+                        {coverage.map((item) => (
+                          <div key={item.providerId} className="coverage-row">
+                            <div className="coverage-platform">
+                              <Image
+                                src={`${LOGO_BASE}${item.logoPath}`}
+                                alt={item.providerName}
+                                width={28}
+                                height={28}
+                                style={{ borderRadius: 6, objectFit: "cover" }}
+                              />
+                              <span className="coverage-name">{item.providerName}</span>
+                            </div>
+                            <div className="coverage-bar-wrap">
+                              <div
+                                className="coverage-bar-fill"
+                                style={{ width: `${Math.max(item.pct, 2)}%` }}
+                              />
+                            </div>
+                            <span className="coverage-stat">
+                              {item.count} {item.count === 1 ? "título" : "títulos"}
+                              <span className="coverage-pct"> · {item.pct}%</span>
+                            </span>
+                          </div>
+                        ))}
+
+                        {coverage.length > 1 && (
+                          <div className="analyzer-insight">
+                            {coverage[0].pct >= 50 ? (
+                              <p>
+                                <strong>{coverage[0].providerName}</strong> cubre el{" "}
+                                <strong>{coverage[0].pct}%</strong> de tu lista pendiente. Es tu plataforma más rentable.
+                              </p>
+                            ) : (
+                              <p>
+                                Tu contenido está distribuido entre varias plataformas. La mayor cobertura la tiene{" "}
+                                <strong>{coverage[0].providerName}</strong> con un {coverage[0].pct}%.
+                              </p>
+                            )}
+                            {coverage[coverage.length - 1].count === 0 && (
+                              <p className="insight-warn">
+                                <strong>{coverage[coverage.length - 1].providerName}</strong> no tiene ningún
+                                título de tu lista pendiente.
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                )}
+                    </>
+                  );
+                })()}
               </section>
             )}
           </div>
@@ -789,6 +884,78 @@ export default function PlatformsPage() {
 
         .insight-warn {
           color: rgba(255, 180, 50, 0.9) !important;
+        }
+
+        /* ── KPI Cards ── */
+        .kpi-cards {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 14px;
+          margin-bottom: 28px;
+        }
+
+        .kpi-card {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-md);
+          padding: 16px 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .kpi-star {
+          border-color: rgba(212, 175, 55, 0.4);
+          background: rgba(212, 175, 55, 0.05);
+        }
+
+        .kpi-used {
+          border-color: rgba(108, 99, 255, 0.3);
+          background: rgba(108, 99, 255, 0.05);
+        }
+
+        .kpi-coverage {
+          border-color: rgba(46, 213, 115, 0.3);
+          background: rgba(46, 213, 115, 0.04);
+        }
+
+        .kpi-label {
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: var(--text-muted);
+        }
+
+        .kpi-main {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .kpi-platform-name {
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--text);
+        }
+
+        .kpi-big {
+          font-size: 28px;
+          font-weight: 800;
+          color: #2ed573;
+          line-height: 1;
+          font-family: var(--font-mono);
+        }
+
+        .kpi-value {
+          font-size: 12px;
+          color: var(--text-muted);
+        }
+
+        .kpi-warn {
+          font-size: 11px;
+          color: rgba(255, 180, 50, 0.9);
+          font-weight: 500;
         }
 
         /* ── Responsive ── */
