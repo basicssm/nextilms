@@ -1,11 +1,10 @@
 "use client";
 
 import { Suspense } from "react";
-import { useState, useRef, useEffect, ChangeEvent } from "react";
+import { useState, useRef, useEffect } from "react";
 import NavBar from "@/components/NavBar";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import SearchBar from "@/components/SearchBar";
 import { useAuth } from "@/context/AuthContext";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 import { useWatchlistMap, useFullWatchlist } from "@/hooks/useWatchlist";
@@ -34,9 +33,6 @@ function HomeContent() {
   const selectedPlatforms = platforms.filter((p) =>
     selectedPlatformIds.includes(p.provider_id)
   );
-  const [searchText, setSearchText] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
-
   // Shared seen-IDs ref for cross-section deduplication; reset when filters change
   const seenIds = useRef(new Set<string>());
   useEffect(() => {
@@ -94,54 +90,13 @@ function HomeContent() {
     router.replace(`/?mediaType=${type}`);
   }
 
-  function handleSearch() {
-    if (searchText.trim())
-      router.push(`/search/${searchText.trim()}?mediaType=${mediaType}`);
-  }
-
-  function handleSearchKey(e: React.KeyboardEvent) {
-    if (e.key === "Enter") handleSearch();
-  }
-
   return (
     <>
       <NavBar />
 
       {/* ── Controles superiores ── */}
       <div className="controls">
-        <div className={`search-bar${searchFocused ? " focused" : ""}`}>
-          <span className="search-icon">
-            <FontAwesomeIcon icon={faMagnifyingGlass} />
-          </span>
-          <input
-            type="text"
-            placeholder="Buscar películas y series..."
-            value={searchText}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setSearchText(e.target.value)
-            }
-            onKeyDown={handleSearchKey}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            autoComplete="off"
-          />
-          {searchText && (
-            <button
-              className="search-clear"
-              onClick={() => setSearchText("")}
-              aria-label="Limpiar"
-            >
-              ✕
-            </button>
-          )}
-          <button
-            className="search-submit"
-            onClick={handleSearch}
-            aria-label="Buscar"
-          >
-            Buscar
-          </button>
-        </div>
+        <SearchBar mediaType={mediaType} />
 
         <TonightModal />
 
@@ -204,87 +159,6 @@ function HomeContent() {
           gap: 16px;
         }
 
-        /* ── Search bar ── */
-        .search-bar {
-          display: flex;
-          align-items: center;
-          width: 100%;
-          max-width: 560px;
-          background: var(--surface);
-          border: 1px solid var(--border-hover);
-          border-radius: var(--radius-lg);
-          padding: 10px 12px 10px 16px;
-          gap: 10px;
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .search-bar.focused {
-          border-color: rgba(108, 99, 255, 0.5);
-          box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
-        }
-
-        .search-icon {
-          color: var(--text-muted);
-          display: flex;
-          align-items: center;
-          flex-shrink: 0;
-          font-size: 14px;
-        }
-
-        .search-bar input {
-          flex: 1;
-          background: none;
-          border: none;
-          outline: none;
-          color: var(--text);
-          font-family: var(--font-body);
-          font-size: 15px;
-          min-width: 0;
-        }
-
-        .search-bar input::placeholder {
-          color: var(--text-subtle);
-        }
-
-        .search-clear {
-          background: none;
-          border: none;
-          color: var(--text-subtle);
-          font-size: 12px;
-          cursor: pointer;
-          padding: 2px 6px;
-          border-radius: var(--radius-sm);
-          transition: color 0.15s;
-          flex-shrink: 0;
-        }
-
-        .search-clear:hover {
-          color: var(--text-muted);
-        }
-
-        .search-submit {
-          background: var(--accent-gradient);
-          border: none;
-          color: #fff;
-          font-family: var(--font-body);
-          font-size: 13px;
-          font-weight: 600;
-          padding: 7px 16px;
-          border-radius: var(--radius-md);
-          cursor: pointer;
-          transition: opacity 0.2s, transform 0.15s;
-          flex-shrink: 0;
-          white-space: nowrap;
-        }
-
-        .search-submit:hover {
-          opacity: 0.9;
-        }
-
-        .search-submit:active {
-          transform: scale(0.97);
-        }
-
         /* ── Type pills ── */
         .type-pills {
           display: flex;
@@ -330,12 +204,6 @@ function HomeContent() {
           .controls {
             padding: 16px 14px 12px;
             gap: 12px;
-          }
-          .search-bar {
-            padding: 9px 10px 9px 14px;
-          }
-          .search-submit {
-            padding: 6px 12px;
           }
           .type-pill {
             font-size: 16px;
