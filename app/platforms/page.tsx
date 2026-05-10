@@ -432,9 +432,6 @@ export default function PlatformsPage() {
                   const pending = watchlistItems.filter(
                     (i) => i.status === "to_watch" || i.status === "watching"
                   );
-                  const coveredIds = new Set<number>();
-                  // items covered by at least one platform: count > 0 means their providers matched
-                  // We compute overall coverage from the coverage data
                   const totalCoveredCount = Math.min(
                     coverage.reduce((sum, c) => sum + c.count, 0),
                     pending.length
