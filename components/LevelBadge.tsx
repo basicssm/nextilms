@@ -8,7 +8,7 @@ const LEVEL_COLORS: Record<number, string> = {
   5: "var(--level-5-color)",
 };
 
-export default function LevelBadge({ level, points }: { level: number; points: number }) {
+export default function LevelBadge({ level }: { level: number }) {
   const color = LEVEL_COLORS[level] ?? "var(--level-1-color)";
 
   return (

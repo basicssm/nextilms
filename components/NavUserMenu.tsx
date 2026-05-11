@@ -45,7 +45,7 @@ function LoggedInMenu({
           aria-label="Menú"
           aria-expanded={menuOpen}
         >
-          <LevelBadge level={currentLevel.level} points={points} />
+          <LevelBadge level={currentLevel.level} />
           <span className={`avatar-ring${unlocks.goldRing ? " avatar-ring--gold" : ""}`}>
             {unlocks.goldRing && <span className="gold-spin" aria-hidden="true" />}
             <span className="avatar">{userInitial}</span>
