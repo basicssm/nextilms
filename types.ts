@@ -49,6 +49,45 @@ export type UserPlatform = {
 
 export type WatchlistStatus = "watching" | "to_watch" | "watched";
 
+export type GamificationLevel = {
+  level: 1 | 2 | 3 | 4 | 5;
+  name: string;
+  minPoints: number;
+  maxPoints: number;
+  unlock: "genre_stats" | "accent_picker" | "marathon_mode" | "gold_ring" | null;
+};
+
+export type Achievement = {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  earned: boolean;
+};
+
+export type GamificationUnlocks = {
+  genreStats: boolean;
+  accentPicker: boolean;
+  marathonMode: boolean;
+  goldRing: boolean;
+};
+
+export type GamificationResult = {
+  points: number;
+  currentLevel: GamificationLevel;
+  nextLevel: GamificationLevel | null;
+  progressPct: number;
+  unlocks: GamificationUnlocks;
+  achievements: Achievement[];
+  breakdown: {
+    watchedFilms: number;
+    watchedSeries: number;
+    episodesWatched: number;
+    ratedItems: number;
+    notedItems: number;
+  };
+};
+
 export type WatchlistItem = {
   id: string;
   user_id: string;

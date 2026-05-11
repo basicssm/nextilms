@@ -43,6 +43,15 @@
   --font-display: var(--font-syne), 'Syne', sans-serif;
   --font-body: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-jetbrains), 'JetBrains Mono', monospace;
+
+  /* ── Gamificación ─────────────────────────────── */
+  --level-1-color: #6b6b8a;
+  --level-2-color: #ff9f43;
+  --level-3-color: #6c63ff;
+  --level-4-color: #ff6584;
+  --level-5-color: #d4af37;
+  --gold-gradient: linear-gradient(135deg, #d4af37 0%, #f5e27a 50%, #c8960a 100%);
+  --gold-glow: rgba(212, 175, 55, 0.3);
 }
 
 *, *::before, *::after {
@@ -120,4 +129,22 @@ input, textarea, select {
 @keyframes pulse-color {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
+}
+
+@keyframes slideUpFade {
+  0%   { opacity: 0; transform: translateY(12px) scale(0.95); }
+  12%  { opacity: 1; transform: translateY(0)    scale(1); }
+  80%  { opacity: 1; transform: translateY(0)    scale(1); }
+  100% { opacity: 0; transform: translateY(-6px) scale(0.97); }
+}
+
+@keyframes goldSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes achievementPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
 }

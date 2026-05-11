@@ -4,10 +4,12 @@ import { useMemo } from "react";
 import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import Back from "@/components/Back";
+import GamificationPanel from "@/components/GamificationPanel";
 import { useAuth } from "@/context/AuthContext";
 import { useFullWatchlist } from "@/hooks/useWatchlist";
 import { useWatchedEpisodesAll } from "@/hooks/useWatchedEpisodesAll";
 import { useTmdbDetails } from "@/hooks/useTmdbDetails";
+import { useGamification } from "@/hooks/useGamification";
 import { WatchlistItem } from "@/types";
 
 const AVG_MOVIE_RUNTIME = 100;
@@ -325,6 +327,7 @@ export default function StatsPage() {
   );
 
   const { details: tmdbDetails, loading: tmdbLoading } = useTmdbDetails(watchedItems);
+  const { unlocks } = useGamification(items, episodeRows);
 
   const stats = useMemo(() => {
     const watched = items.filter((i) => i.status === "watched");
@@ -616,6 +619,9 @@ export default function StatsPage() {
             </div>
           ) : (
             <>
+              {/* ── Gamificación ── */}
+              <GamificationPanel items={items} episodeRows={episodeRows} />
+
               {/* ── Stat cards ── */}
               <section className="section">
                 <h2 className="section-title">Resumen</h2>
@@ -861,8 +867,8 @@ export default function StatsPage() {
                 </div>
               </section>
 
-              {/* ── Top genres ── */}
-              {(tmdbLoading || (enrichedStats?.topGenres && enrichedStats.topGenres.length > 0)) && (
+              {/* ── Top genres (Nivel 2+) ── */}
+              {unlocks.genreStats && (tmdbLoading || (enrichedStats?.topGenres && enrichedStats.topGenres.length > 0)) && (
                 <section className="section">
                   <h2 className="section-title">Tus géneros favoritos</h2>
                   <p className="section-sub">Basado en los títulos que has marcado como vistos</p>
@@ -887,8 +893,8 @@ export default function StatsPage() {
                 </section>
               )}
 
-              {/* ── Decades ── */}
-              {enrichedStats?.decades && enrichedStats.decades.length > 1 && (
+              {/* ── Decades (Nivel 2+) ── */}
+              {unlocks.genreStats && enrichedStats?.decades && enrichedStats.decades.length > 1 && (
                 <section className="section">
                   <h2 className="section-title">Tus décadas de cine</h2>
                   <p className="section-sub">Distribución por década de estreno de lo que has visto</p>

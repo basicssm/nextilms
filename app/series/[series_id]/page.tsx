@@ -8,6 +8,9 @@ import Back from "@/components/Back";
 import Detail from "@/components/Detail";
 import CastSection from "@/components/CastSection";
 import RelatedTitles from "@/components/RelatedTitles";
+import { useFullWatchlist } from "@/hooks/useWatchlist";
+import { useWatchedEpisodesAll } from "@/hooks/useWatchedEpisodesAll";
+import { useGamification } from "@/hooks/useGamification";
 import { FilmDetail, WatchProvider } from "@/types";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -18,6 +21,10 @@ export default function SeriesDetailPage({
   params: Promise<{ series_id: string }>;
 }) {
   const { series_id } = use(params);
+
+  const { items } = useFullWatchlist();
+  const { rows: episodeRows } = useWatchedEpisodesAll();
+  const { unlocks } = useGamification(items, episodeRows);
 
   const { data, error } = useSWR(
     `${API_BASE_URL}/tv/${series_id}?api_key=${API_KEY}&language=es-ES`,
@@ -109,7 +116,13 @@ export default function SeriesDetailPage({
       <NavBar>
         <Back />
       </NavBar>
-      <Detail film={normalized} videos={videoList} seriesInfo={seriesInfo} mediaType="series" />
+      <Detail
+        film={normalized}
+        videos={videoList}
+        seriesInfo={seriesInfo}
+        mediaType="series"
+        marathonModeEnabled={unlocks.marathonMode}
+      />
       <CastSection filmId={Number(series_id)} mediaType="series" />
       <RelatedTitles filmId={Number(series_id)} mediaType="series" />
     </>
