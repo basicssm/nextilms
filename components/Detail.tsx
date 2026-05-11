@@ -31,11 +31,13 @@ export default function Detail({
   videos,
   seriesInfo,
   mediaType = "film",
+  marathonModeEnabled = false,
 }: {
   film: FilmDetail;
   videos: VideoResult[];
   seriesInfo?: SeriesInfo;
   mediaType?: "film" | "series";
+  marathonModeEnabled?: boolean;
 }) {
   const { platformIds } = useUserPlatforms();
   const filmId = Number(film.id);
@@ -145,6 +147,22 @@ export default function Detail({
             loading={watchlistLoading}
             setStatus={setStatus}
           />
+
+          {/* Modo Maratón (Nivel 4+, solo series) */}
+          {marathonModeEnabled && mediaType === "series" && (
+            <button
+              className="marathon-btn"
+              onClick={() => setStatus("watched", title, poster_path ?? null, "series")}
+              disabled={watchlistLoading || watchlistItem?.status === "watched"}
+              title={
+                watchlistItem?.status === "watched"
+                  ? "Esta serie ya está marcada como vista"
+                  : "Marcar toda la serie como vista de una vez"
+              }
+            >
+              <span>▶▶</span> Modo Maratón — marcar serie completa
+            </button>
+          )}
 
           {/* Valoración y notas personales */}
           <RatingNotesPanel
@@ -357,6 +375,31 @@ export default function Detail({
           padding: 4px 12px;
           border-radius: 20px;
           letter-spacing: 0.01em;
+        }
+
+        .marathon-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 9px 18px;
+          border-radius: 20px;
+          border: 1px solid var(--watched-border);
+          background: var(--watched-bg);
+          color: var(--watched);
+          font-family: var(--font-body);
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.2s, opacity 0.2s;
+          align-self: flex-start;
+          margin-top: 4px;
+        }
+        .marathon-btn:hover:not(:disabled) {
+          background: rgba(38, 222, 129, 0.2);
+        }
+        .marathon-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
         }
 
         /* Sinopsis */

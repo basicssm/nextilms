@@ -42,7 +42,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${syne.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
-      <head />
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var c=localStorage.getItem('ww-accent-override');if(c)document.documentElement.style.setProperty('--accent',c);}catch(e){}`,
+          }}
+        />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>
