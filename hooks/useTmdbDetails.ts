@@ -9,6 +9,7 @@ export type TmdbEnrichment = {
   release_date: string | null;
   vote_average: number | null;
   number_of_episodes: number | null;
+  popularity: number | null;
 };
 
 const BATCH_SIZE = 20;
@@ -48,6 +49,7 @@ export function useTmdbDetails(items: WatchlistItem[]) {
               release_date: d.release_date ?? d.first_air_date ?? null,
               vote_average: d.vote_average ?? null,
               number_of_episodes: d.number_of_episodes ?? null,
+              popularity: d.popularity ?? null,
             } as TmdbEnrichment;
           })
         );
