@@ -15,6 +15,37 @@ const AVG_EPISODE_RUNTIME = 42;
 
 const DAYS_ES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
+function peakHourLabel(hour: number): string {
+  if (hour >= 5 && hour < 12) return "madrugador";
+  if (hour >= 12 && hour < 18) return "de tarde";
+  if (hour >= 18 && hour < 23) return "nocturno";
+  return "trasnochador";
+}
+
+function longestStreak(items: WatchlistItem[]): number {
+  const dateSet = new Set<string>();
+  for (const item of items) {
+    dateSet.add(item.created_at.slice(0, 10));
+    dateSet.add(item.updated_at.slice(0, 10));
+  }
+  const sorted = [...dateSet].sort();
+  if (sorted.length === 0) return 0;
+  let max = 1;
+  let cur = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = new Date(sorted[i - 1]);
+    const curr = new Date(sorted[i]);
+    const diff = (curr.getTime() - prev.getTime()) / 86400000;
+    if (diff === 1) {
+      cur++;
+      if (cur > max) max = cur;
+    } else if (diff > 1) {
+      cur = 1;
+    }
+  }
+  return max;
+}
+
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="stat-card">
@@ -219,44 +250,44 @@ function RecordCard({
   );
 }
 
-function GenreBar({ genre, count, max }: { genre: string; count: number; max: number }) {
+function HBar({ label, count, max }: { label: string; count: number; max: number }) {
   const pct = max > 0 ? (count / max) * 100 : 0;
   return (
-    <div className="genre-row">
-      <span className="genre-name">{genre}</span>
-      <div className="genre-track">
-        <div className="genre-fill" style={{ width: `${pct}%` }} />
+    <div className="hbar-row">
+      <span className="hbar-name">{label}</span>
+      <div className="hbar-track">
+        <div className="hbar-fill" style={{ width: `${pct}%` }} />
       </div>
-      <span className="genre-count">{count}</span>
+      <span className="hbar-count">{count}</span>
       <style jsx>{`
-        .genre-row {
+        .hbar-row {
           display: grid;
           grid-template-columns: 120px 1fr 28px;
           align-items: center;
           gap: 12px;
         }
-        .genre-name {
+        .hbar-name {
           font-size: 13px;
           color: var(--text);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
-        .genre-track {
+        .hbar-track {
           height: 6px;
           background: var(--bg);
           border-radius: 3px;
           overflow: hidden;
           border: 1px solid var(--border);
         }
-        .genre-fill {
+        .hbar-fill {
           height: 100%;
           background: var(--accent-gradient);
           border-radius: 3px;
           transition: width 0.6s ease;
           min-width: 4px;
         }
-        .genre-count {
+        .hbar-count {
           font-family: var(--font-mono);
           font-size: 11px;
           font-weight: 600;
@@ -301,6 +332,7 @@ export default function StatsPage() {
     const toWatch = items.filter((i) => i.status === "to_watch");
     const watchedFilms = watched.filter((i) => i.media_type !== "series");
     const watchedSeries = watched.filter((i) => i.media_type === "series");
+    const watchingSeries = watching.filter((i) => i.media_type === "series");
 
     const estHoursFilms = Math.round((watchedFilms.length * AVG_MOVIE_RUNTIME) / 60);
     const estHoursEpisodes = Math.round(
@@ -357,6 +389,49 @@ export default function StatsPage() {
         ? [...items].sort((a, b) => a.created_at.localeCompare(b.created_at))[0]
         : null;
 
+    // ── Datos curiosos ──
+
+    // Peak hour of day
+    const hourCount: Record<number, number> = {};
+    for (const item of items) {
+      const h = new Date(item.created_at).getHours();
+      hourCount[h] = (hourCount[h] ?? 0) + 1;
+    }
+    const peakHourEntry = Object.entries(hourCount).sort((a, b) => Number(b[1]) - Number(a[1]))[0];
+    const peakHour = peakHourEntry ? Number(peakHourEntry[0]) : null;
+
+    // Pila de la vergüenza (oldest to_watch item)
+    const shameItem =
+      toWatch.length > 0
+        ? [...toWatch].sort((a, b) => a.created_at.localeCompare(b.created_at))[0]
+        : null;
+    const shameMonths = shameItem
+      ? Math.floor((Date.now() - new Date(shameItem.created_at).getTime()) / (1000 * 60 * 60 * 24 * 30))
+      : 0;
+
+    // Average days from add to watched
+    const daysToWatchArr = watched
+      .map((i) =>
+        Math.round(
+          (new Date(i.updated_at).getTime() - new Date(i.created_at).getTime()) / 86400000
+        )
+      )
+      .filter((d) => d >= 0 && d < 3650);
+    const avgDaysToWatch =
+      daysToWatchArr.length > 0
+        ? Math.round(daysToWatchArr.reduce((a, b) => a + b, 0) / daysToWatchArr.length)
+        : null;
+
+    // Longest streak
+    const streak = items.length > 0 ? longestStreak(items) : 0;
+
+    // Series loyalty: % of series started that were finished
+    const totalSeriesStarted = watchedSeries.length + watchingSeries.length;
+    const seriesLoyalty =
+      totalSeriesStarted > 0
+        ? Math.round((watchedSeries.length / totalSeriesStarted) * 100)
+        : null;
+
     return {
       total: items.length,
       watched: watched.length,
@@ -377,6 +452,12 @@ export default function StatsPage() {
       topSeriesEpCount,
       mostActiveDay,
       firstAdded,
+      peakHour,
+      shameItem,
+      shameMonths,
+      avgDaysToWatch,
+      streak,
+      seriesLoyalty,
     };
   }, [items, episodeRows]);
 
@@ -433,8 +514,64 @@ export default function StatsPage() {
           ).toFixed(1)
         : null;
 
-    return { topGenres, maxGenreCount, oldestFilm, newestFilm, longestSeries, avgTmdbScore };
-  }, [tmdbDetails, watchedItems]);
+    // Most obscure watched item (lowest TMDB popularity)
+    const withPopularity = watchedItems
+      .map((i) => ({ item: i, pop: tmdbDetails.get(i.film_id)?.popularity ?? null }))
+      .filter((x): x is { item: WatchlistItem; pop: number } => x.pop !== null && x.pop > 0);
+    const mostObscure =
+      withPopularity.length > 0
+        ? withPopularity.reduce((min, x) => (x.pop < min.pop ? x : min))
+        : null;
+
+    // Favorite release year
+    const yearCount = new Map<string, number>();
+    for (const item of watchedItems) {
+      const year = tmdbDetails.get(item.film_id)?.release_date?.slice(0, 4);
+      if (year && year.length === 4) yearCount.set(year, (yearCount.get(year) ?? 0) + 1);
+    }
+    const favoriteYear =
+      yearCount.size > 0
+        ? [...yearCount.entries()].sort((a, b) => b[1] - a[1])[0][0]
+        : null;
+
+    // Decades distribution
+    const decadeCount = new Map<string, number>();
+    for (const item of watchedItems) {
+      const yearStr = tmdbDetails.get(item.film_id)?.release_date?.slice(0, 4);
+      const year = yearStr ? parseInt(yearStr, 10) : NaN;
+      if (!isNaN(year) && year > 1900) {
+        const decade = `${Math.floor(year / 10) * 10}s`;
+        decadeCount.set(decade, (decadeCount.get(decade) ?? 0) + 1);
+      }
+    }
+    const decades = [...decadeCount.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([label, count]) => ({ label, count }));
+    const maxDecadeCount = Math.max(...decades.map((d) => d.count), 1);
+
+    // Critic diff: user avg rating vs TMDB avg
+    const userAvg = stats.avgRating ? parseFloat(stats.avgRating) : null;
+    const tmdbAvg = avgTmdbScore ? parseFloat(avgTmdbScore) : null;
+    const criticDiff =
+      userAvg !== null && tmdbAvg !== null
+        ? (userAvg - tmdbAvg).toFixed(1)
+        : null;
+
+    return {
+      topGenres,
+      maxGenreCount,
+      oldestFilm,
+      newestFilm,
+      longestSeries,
+      avgTmdbScore,
+      mostObscure,
+      favoriteYear,
+      decades,
+      maxDecadeCount,
+      criticDiff,
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tmdbDetails, watchedItems, stats.avgRating]);
 
   if (!authLoading && !user) {
     return (
@@ -525,21 +662,9 @@ export default function StatsPage() {
               <section className="section">
                 <h2 className="section-title">Progreso de tu lista</h2>
                 <div className="progress-block">
-                  <ProgressBar
-                    value={stats.watched}
-                    max={stats.total}
-                    label="Completado"
-                  />
-                  <ProgressBar
-                    value={stats.watching}
-                    max={stats.total}
-                    label="En progreso"
-                  />
-                  <ProgressBar
-                    value={stats.toWatch}
-                    max={stats.total}
-                    label="Pendiente"
-                  />
+                  <ProgressBar value={stats.watched} max={stats.total} label="Completado" />
+                  <ProgressBar value={stats.watching} max={stats.total} label="En progreso" />
+                  <ProgressBar value={stats.toWatch} max={stats.total} label="Pendiente" />
                 </div>
               </section>
 
@@ -549,17 +674,12 @@ export default function StatsPage() {
                 <p className="section-sub">Títulos añadidos o actualizados (últimos 12 meses)</p>
                 <div className="monthly-chart">
                   {stats.monthlyActivity.map(({ label, count }) => (
-                    <MonthlyBar
-                      key={label}
-                      label={label}
-                      value={count}
-                      max={stats.maxMonth}
-                    />
+                    <MonthlyBar key={label} label={label} value={count} max={stats.maxMonth} />
                   ))}
                 </div>
               </section>
 
-              {/* ── Records / curiosidades ── */}
+              {/* ── Records / Lo más destacado ── */}
               {(stats.bestRated ||
                 stats.topSeriesItem ||
                 enrichedStats?.oldestFilm ||
@@ -636,29 +756,152 @@ export default function StatsPage() {
                 </section>
               )}
 
+              {/* ── Datos curiosos ── */}
+              <section className="section">
+                <h2 className="section-title">Datos curiosos</h2>
+                {tmdbLoading && !enrichedStats && (
+                  <p className="section-sub">Cargando más datos…</p>
+                )}
+                <div className="record-grid">
+                  {/* Noctámbulo */}
+                  {stats.peakHour !== null && (
+                    <RecordCard
+                      icon="🦉"
+                      label="¿Noctámbulo o madrugador?"
+                      title={peakHourLabel(stats.peakHour)}
+                      sub={`Sueles añadir a las ${stats.peakHour}:00`}
+                    />
+                  )}
+
+                  {/* Pila de la vergüenza */}
+                  {stats.shameItem && (
+                    <RecordCard
+                      icon="😅"
+                      label="Tu pila de la vergüenza"
+                      title={stats.shameItem.film_title}
+                      sub={
+                        stats.shameMonths > 0
+                          ? `Lleva ${stats.shameMonths} ${stats.shameMonths === 1 ? "mes" : "meses"} esperando`
+                          : "Recién añadido — sin excusas"
+                      }
+                    />
+                  )}
+
+                  {/* Velocidad media */}
+                  {stats.avgDaysToWatch !== null && stats.watched > 1 && (
+                    <RecordCard
+                      icon="⚡"
+                      label="Velocidad de visionado"
+                      title={
+                        stats.avgDaysToWatch === 0
+                          ? "El mismo día"
+                          : `${stats.avgDaysToWatch} días de media`
+                      }
+                      sub="Entre añadir y marcar como visto"
+                    />
+                  )}
+
+                  {/* Racha */}
+                  {stats.streak > 1 && (
+                    <RecordCard
+                      icon="🔥"
+                      label="Racha más larga"
+                      title={`${stats.streak} días seguidos`}
+                      sub="Días consecutivos con actividad"
+                    />
+                  )}
+
+                  {/* Fidelidad a las series */}
+                  {stats.seriesLoyalty !== null && (
+                    <RecordCard
+                      icon="📊"
+                      label="Fidelidad a las series"
+                      title={`${stats.seriesLoyalty}%`}
+                      sub="De las series que empiezas, las terminas"
+                    />
+                  )}
+
+                  {/* Hallazgo más oculto */}
+                  {enrichedStats?.mostObscure && (
+                    <RecordCard
+                      icon="🔍"
+                      label="Tu hallazgo más oculto"
+                      title={enrichedStats.mostObscure.item.film_title}
+                      sub={`Popularidad TMDB: ${enrichedStats.mostObscure.pop.toFixed(0)}`}
+                    />
+                  )}
+
+                  {/* Año favorito del cine */}
+                  {enrichedStats?.favoriteYear && (
+                    <RecordCard
+                      icon="📆"
+                      label="Tu año favorito del cine"
+                      title={enrichedStats.favoriteYear}
+                      sub="El año con más títulos en tu lista vista"
+                    />
+                  )}
+
+                  {/* ¿Más exigente que el público? */}
+                  {enrichedStats?.criticDiff && (
+                    <RecordCard
+                      icon="🔬"
+                      label={
+                        parseFloat(enrichedStats.criticDiff) >= 0
+                          ? "Más generoso que el público"
+                          : "Más exigente que el público"
+                      }
+                      title={
+                        parseFloat(enrichedStats.criticDiff) >= 0
+                          ? `+${enrichedStats.criticDiff} puntos`
+                          : `${enrichedStats.criticDiff} puntos`
+                      }
+                      sub="Tu nota media vs la nota TMDB"
+                    />
+                  )}
+                </div>
+              </section>
+
               {/* ── Top genres ── */}
               {(tmdbLoading || (enrichedStats?.topGenres && enrichedStats.topGenres.length > 0)) && (
                 <section className="section">
                   <h2 className="section-title">Tus géneros favoritos</h2>
                   <p className="section-sub">Basado en los títulos que has marcado como vistos</p>
                   {tmdbLoading && !enrichedStats ? (
-                    <div className="genre-loading">
+                    <div className="hbar-loading">
                       <div className="dots">
                         <span className="dot" /><span className="dot" /><span className="dot" />
                       </div>
                     </div>
                   ) : (
-                    <div className="genre-block">
+                    <div className="hbar-block">
                       {enrichedStats?.topGenres.map(({ genre, count }) => (
-                        <GenreBar
+                        <HBar
                           key={genre}
-                          genre={genre}
+                          label={genre}
                           count={count}
                           max={enrichedStats.maxGenreCount}
                         />
                       ))}
                     </div>
                   )}
+                </section>
+              )}
+
+              {/* ── Decades ── */}
+              {enrichedStats?.decades && enrichedStats.decades.length > 1 && (
+                <section className="section">
+                  <h2 className="section-title">Tus décadas de cine</h2>
+                  <p className="section-sub">Distribución por década de estreno de lo que has visto</p>
+                  <div className="hbar-block">
+                    {enrichedStats.decades.map(({ label, count }) => (
+                      <HBar
+                        key={label}
+                        label={label}
+                        count={count}
+                        max={enrichedStats.maxDecadeCount}
+                      />
+                    ))}
+                  </div>
                 </section>
               )}
             </>
@@ -755,7 +998,7 @@ export default function StatsPage() {
           height: 140px;
         }
 
-        .genre-block {
+        .hbar-block {
           display: flex;
           flex-direction: column;
           gap: 12px;
@@ -765,7 +1008,7 @@ export default function StatsPage() {
           padding: 20px 24px;
         }
 
-        .genre-loading {
+        .hbar-loading {
           display: flex;
           justify-content: center;
           padding: 24px 0;
@@ -855,12 +1098,12 @@ export default function StatsPage() {
             height: 120px;
           }
 
-          .genre-block {
+          .hbar-block {
             padding: 16px;
           }
 
-          .genre-row {
-            grid-template-columns: 90px 1fr 24px;
+          .hbar-row {
+            grid-template-columns: 80px 1fr 24px;
           }
         }
       `}</style>
