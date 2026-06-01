@@ -114,3 +114,11 @@ export type WatchlistSeriesWithNext = WatchlistItem & {
   next_episode_to_air: NextEpisodeInfo;
   daysUntil: number | null;
 };
+
+export type UpcomingPlatformSeries = {
+  id: number;
+  title: string;
+  poster_path: string | null;
+  air_date: string;
+  daysUntil: number;
+};

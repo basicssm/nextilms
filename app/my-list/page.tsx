@@ -9,6 +9,7 @@ import Back from "@/components/Back";
 import { useAuth } from "@/context/AuthContext";
 import { useFullWatchlist } from "@/hooks/useWatchlist";
 import { useUpcomingSeasons } from "@/hooks/useUpcomingSeasons";
+import { useUpcomingOnPlatforms } from "@/hooks/useUpcomingOnPlatforms";
 import { WatchlistItem, WatchlistStatus } from "@/types";
 import { TMDB_POSTER_SM } from "@/utils/constants";
 import { WATCHLIST_STATUS_CONFIG as STATUS_CONFIG } from "@/utils/watchlistConfig";
@@ -323,6 +324,7 @@ export default function MyListPage() {
   const router = useRouter();
   const { items, loading, removeItem, changeStatus } = useFullWatchlist();
   const { upcoming, available, loading: upcomingLoading } = useUpcomingSeasons(items);
+  const { series: platformSeries, loading: platformLoading } = useUpcomingOnPlatforms(items);
 
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("recent");
@@ -479,6 +481,8 @@ export default function MyListPage() {
               upcoming={upcoming}
               available={available}
               loading={upcomingLoading}
+              platformSeries={platformSeries}
+              platformLoading={platformLoading}
             />
 
             {/* Kanban desktop */}
