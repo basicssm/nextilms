@@ -8,9 +8,11 @@ import NavBar from "@/components/NavBar";
 import Back from "@/components/Back";
 import { useAuth } from "@/context/AuthContext";
 import { useFullWatchlist } from "@/hooks/useWatchlist";
+import { useUpcomingSeasons } from "@/hooks/useUpcomingSeasons";
 import { WatchlistItem, WatchlistStatus } from "@/types";
 import { TMDB_POSTER_SM } from "@/utils/constants";
 import { WATCHLIST_STATUS_CONFIG as STATUS_CONFIG } from "@/utils/watchlistConfig";
+import UpcomingSeasonsSection from "@/components/UpcomingSeasonsSection";
 
 type TypeFilter = "all" | "film" | "series";
 type SortOrder = "recent" | "alpha";
@@ -320,6 +322,7 @@ export default function MyListPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { items, loading, removeItem, changeStatus } = useFullWatchlist();
+  const { upcoming, available, loading: upcomingLoading } = useUpcomingSeasons(items);
 
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("recent");
@@ -472,6 +475,12 @@ export default function MyListPage() {
           </div>
         ) : (
           <>
+            <UpcomingSeasonsSection
+              upcoming={upcoming}
+              available={available}
+              loading={upcomingLoading}
+            />
+
             {/* Kanban desktop */}
             <div className="kanban">
               {(["watching", "to_watch", "watched"] as WatchlistStatus[]).map((s) => (
