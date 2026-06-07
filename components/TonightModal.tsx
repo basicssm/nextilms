@@ -299,7 +299,11 @@ export default function TonightModal() {
       new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
 
     setMovies(filteredMovies);
-    setSeriesWatching([...filteredWatching].sort(byRecent));
+    setSeriesWatching(
+      [...filteredWatching].sort(
+        (a, b) => (a.episodesPending ?? 0) - (b.episodesPending ?? 0)
+      )
+    );
     setSeriesToWatch([...filteredSeriesQueue].sort(byRecent));
     setProcessing(false);
   }, [items, platformIds, user]);
