@@ -50,7 +50,7 @@ export default function Detail({
     if (navigator.share) {
       try {
         await navigator.share({ title, url });
-      } catch (_) {}
+      } catch {}
     } else {
       await navigator.clipboard.writeText(url);
       setCopied(true);
