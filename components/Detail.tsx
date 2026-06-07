@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import YouTube from "react-youtube";
 import { FilmDetail, WatchProvider } from "@/types";
@@ -42,6 +43,20 @@ export default function Detail({
   const { platformIds } = useUserPlatforms();
   const filmId = Number(film.id);
   const { item: watchlistItem, loading: watchlistLoading, setStatus, updateRating, updateNotes } = useWatchlist(filmId);
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch (_) {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const {
     title,
@@ -147,6 +162,16 @@ export default function Detail({
             loading={watchlistLoading}
             setStatus={setStatus}
           />
+
+          {/* Botón compartir */}
+          <button
+            className={`share-btn${copied ? " copied" : ""}`}
+            onClick={handleShare}
+            title="Compartir esta página"
+          >
+            <span className="share-icon">↗</span>
+            {copied ? "¡Copiado!" : "Compartir"}
+          </button>
 
           {/* Modo Maratón (Nivel 4+, solo series) */}
           {marathonModeEnabled && mediaType === "series" && (
@@ -375,6 +400,39 @@ export default function Detail({
           padding: 4px 12px;
           border-radius: 20px;
           letter-spacing: 0.01em;
+        }
+
+        .share-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 9px 16px;
+          min-height: 40px;
+          border-radius: 20px;
+          border: 1px solid var(--border-hover);
+          background: var(--surface);
+          color: var(--text-muted);
+          font-family: var(--font-body);
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          letter-spacing: 0.01em;
+          margin-top: 10px;
+          align-self: flex-start;
+        }
+        .share-btn:hover {
+          border-color: var(--accent);
+          color: var(--accent);
+          background: rgba(108, 99, 255, 0.08);
+        }
+        .share-btn.copied {
+          border-color: var(--watched-border);
+          background: var(--watched-bg);
+          color: var(--watched);
+        }
+        .share-icon {
+          font-size: 14px;
         }
 
         .marathon-btn {
