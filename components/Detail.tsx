@@ -403,36 +403,40 @@ export default function Detail({
         }
 
         .share-btn {
-          display: flex;
+          display: inline-flex;
           align-items: center;
-          gap: 6px;
-          padding: 9px 16px;
-          min-height: 40px;
-          border-radius: 20px;
-          border: 1px solid var(--border-hover);
-          background: var(--surface);
-          color: var(--text-muted);
+          gap: 5px;
+          padding: 5px 12px;
+          border-radius: var(--radius-sm);
+          border: 1px dashed var(--border-hover);
+          background: transparent;
+          color: var(--text-subtle);
           font-family: var(--font-body);
-          font-size: 13px;
-          font-weight: 500;
+          font-size: 12px;
+          font-weight: 400;
           cursor: pointer;
           transition: all 0.2s ease;
-          letter-spacing: 0.01em;
-          margin-top: 10px;
+          letter-spacing: 0.02em;
+          margin-top: 16px;
           align-self: flex-start;
+          opacity: 0.7;
         }
         .share-btn:hover {
-          border-color: var(--accent);
-          color: var(--accent);
-          background: rgba(108, 99, 255, 0.08);
+          border-style: solid;
+          border-color: var(--gold);
+          color: var(--gold);
+          background: rgba(212, 175, 55, 0.06);
+          opacity: 1;
         }
         .share-btn.copied {
-          border-color: var(--watched-border);
-          background: var(--watched-bg);
-          color: var(--watched);
+          border-style: solid;
+          border-color: rgba(212, 175, 55, 0.5);
+          color: var(--gold);
+          background: rgba(212, 175, 55, 0.08);
+          opacity: 1;
         }
         .share-icon {
-          font-size: 14px;
+          font-size: 11px;
         }
 
         .marathon-btn {
