@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import YouTube from "react-youtube";
 import { FilmDetail, WatchProvider } from "@/types";
@@ -8,6 +9,8 @@ import RatingNotesPanel from "@/components/RatingNotesPanel";
 import EpisodeTracker, { SeasonInfo } from "@/components/EpisodeTracker";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowUpFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { TMDB_POSTER_MD, TMDB_BACKDROP, TMDB_LOGO_ORIGINAL } from "@/utils/constants";
 
 const PROVIDER_LOGO_BASE = TMDB_LOGO_ORIGINAL;
@@ -42,6 +45,20 @@ export default function Detail({
   const { platformIds } = useUserPlatforms();
   const filmId = Number(film.id);
   const { item: watchlistItem, loading: watchlistLoading, setStatus, updateRating, updateNotes } = useWatchlist(filmId);
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const {
     title,
@@ -212,6 +229,16 @@ export default function Detail({
           {/* Sinopsis */}
           {overview && <p className="overview">{overview}</p>}
         </div>
+
+        {/* Botón compartir — flotante, separado de los botones de acción */}
+        <button
+          className={`share-btn${copied ? " copied" : ""}`}
+          onClick={handleShare}
+          title={copied ? "¡Copiado!" : "Compartir esta página"}
+        >
+          <FontAwesomeIcon icon={faArrowUpFromBracket} className="share-icon" />
+          <span className="share-label">{copied ? "¡Copiado!" : "Compartir"}</span>
+        </button>
       </div>
 
       {/* ── Vídeos ──────────────────────────────── */}
@@ -375,6 +402,76 @@ export default function Detail({
           padding: 4px 12px;
           border-radius: 20px;
           letter-spacing: 0.01em;
+        }
+
+        /* ── Botón compartir ───────────────────── */
+        .share-btn {
+          position: absolute;
+          top: 20px;
+          right: 48px;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 6px 14px;
+          border-radius: var(--radius-sm);
+          border: 1px dashed rgba(212, 175, 55, 0.3);
+          background: rgba(10, 10, 15, 0.55);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          color: var(--text-subtle);
+          font-family: var(--font-body);
+          font-size: 12px;
+          font-weight: 400;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          letter-spacing: 0.02em;
+          z-index: 2;
+        }
+        .share-btn:hover {
+          border-style: solid;
+          border-color: var(--gold);
+          color: var(--gold);
+          background: rgba(212, 175, 55, 0.08);
+        }
+        .share-btn.copied {
+          border-style: solid;
+          border-color: rgba(212, 175, 55, 0.5);
+          color: var(--gold);
+          background: rgba(212, 175, 55, 0.1);
+        }
+        :global(.share-icon) {
+          width: 13px;
+          height: 13px;
+        }
+
+        @media (max-width: 768px) {
+          .share-btn {
+            position: fixed;
+            bottom: 28px;
+            right: 18px;
+            top: auto;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            padding: 0;
+            justify-content: center;
+            border-style: solid;
+            border-color: var(--border-hover);
+            background: var(--surface-elevated);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+          }
+          .share-btn:hover,
+          .share-btn.copied {
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.12);
+          }
+          .share-label {
+            display: none;
+          }
+          :global(.share-icon) {
+            width: 20px;
+            height: 20px;
+          }
         }
 
         .marathon-btn {
