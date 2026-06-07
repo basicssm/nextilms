@@ -163,16 +163,6 @@ export default function Detail({
             setStatus={setStatus}
           />
 
-          {/* Botón compartir */}
-          <button
-            className={`share-btn${copied ? " copied" : ""}`}
-            onClick={handleShare}
-            title="Compartir esta página"
-          >
-            <span className="share-icon">↗</span>
-            {copied ? "¡Copiado!" : "Compartir"}
-          </button>
-
           {/* Modo Maratón (Nivel 4+, solo series) */}
           {marathonModeEnabled && mediaType === "series" && (
             <button
@@ -237,6 +227,16 @@ export default function Detail({
           {/* Sinopsis */}
           {overview && <p className="overview">{overview}</p>}
         </div>
+
+        {/* Botón compartir — flotante, separado de los botones de acción */}
+        <button
+          className={`share-btn${copied ? " copied" : ""}`}
+          onClick={handleShare}
+          title={copied ? "¡Copiado!" : "Compartir esta página"}
+        >
+          <span className="share-icon">↗</span>
+          <span className="share-label">{copied ? "¡Copiado!" : "Compartir"}</span>
+        </button>
       </div>
 
       {/* ── Vídeos ──────────────────────────────── */}
@@ -402,14 +402,20 @@ export default function Detail({
           letter-spacing: 0.01em;
         }
 
+        /* ── Botón compartir ───────────────────── */
         .share-btn {
+          position: absolute;
+          top: 20px;
+          right: 48px;
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          padding: 5px 12px;
+          padding: 6px 14px;
           border-radius: var(--radius-sm);
-          border: 1px dashed var(--border-hover);
-          background: transparent;
+          border: 1px dashed rgba(212, 175, 55, 0.3);
+          background: rgba(10, 10, 15, 0.55);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
           color: var(--text-subtle);
           font-family: var(--font-body);
           font-size: 12px;
@@ -417,26 +423,51 @@ export default function Detail({
           cursor: pointer;
           transition: all 0.2s ease;
           letter-spacing: 0.02em;
-          margin-top: 16px;
-          align-self: flex-start;
-          opacity: 0.7;
+          z-index: 2;
         }
         .share-btn:hover {
           border-style: solid;
           border-color: var(--gold);
           color: var(--gold);
-          background: rgba(212, 175, 55, 0.06);
-          opacity: 1;
+          background: rgba(212, 175, 55, 0.08);
         }
         .share-btn.copied {
           border-style: solid;
           border-color: rgba(212, 175, 55, 0.5);
           color: var(--gold);
-          background: rgba(212, 175, 55, 0.08);
-          opacity: 1;
+          background: rgba(212, 175, 55, 0.1);
         }
         .share-icon {
-          font-size: 11px;
+          font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+          .share-btn {
+            position: fixed;
+            bottom: 28px;
+            right: 18px;
+            top: auto;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            padding: 0;
+            justify-content: center;
+            border-style: solid;
+            border-color: var(--border-hover);
+            background: var(--surface-elevated);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+          }
+          .share-btn:hover,
+          .share-btn.copied {
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.12);
+          }
+          .share-label {
+            display: none;
+          }
+          .share-icon {
+            font-size: 18px;
+          }
         }
 
         .marathon-btn {
