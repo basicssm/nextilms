@@ -9,6 +9,8 @@ import RatingNotesPanel from "@/components/RatingNotesPanel";
 import EpisodeTracker, { SeasonInfo } from "@/components/EpisodeTracker";
 import { useUserPlatforms } from "@/hooks/useUserPlatforms";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowUpFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { TMDB_POSTER_MD, TMDB_BACKDROP, TMDB_LOGO_ORIGINAL } from "@/utils/constants";
 
 const PROVIDER_LOGO_BASE = TMDB_LOGO_ORIGINAL;
@@ -234,7 +236,7 @@ export default function Detail({
           onClick={handleShare}
           title={copied ? "¡Copiado!" : "Compartir esta página"}
         >
-          <span className="share-icon">↗</span>
+          <FontAwesomeIcon icon={faArrowUpFromBracket} className="share-icon" />
           <span className="share-label">{copied ? "¡Copiado!" : "Compartir"}</span>
         </button>
       </div>
@@ -437,8 +439,9 @@ export default function Detail({
           color: var(--gold);
           background: rgba(212, 175, 55, 0.1);
         }
-        .share-icon {
-          font-size: 12px;
+        :global(.share-icon) {
+          width: 13px;
+          height: 13px;
         }
 
         @media (max-width: 768px) {
@@ -465,8 +468,9 @@ export default function Detail({
           .share-label {
             display: none;
           }
-          .share-icon {
-            font-size: 18px;
+          :global(.share-icon) {
+            width: 20px;
+            height: 20px;
           }
         }
 
