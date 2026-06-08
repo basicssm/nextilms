@@ -25,4 +25,11 @@ export const WATCHLIST_STATUS_CONFIG: Record<
     bgVar: "var(--watched-bg)",
     borderVar: "var(--watched-border)",
   },
+  abandoned: {
+    label: "Abandonada",
+    icon: "⊘",
+    colorVar: "var(--abandoned)",
+    bgVar: "var(--abandoned-bg)",
+    borderVar: "var(--abandoned-border)",
+  },
 };

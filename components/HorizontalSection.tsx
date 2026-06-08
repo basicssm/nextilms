@@ -115,7 +115,7 @@ export default function HorizontalSection({
     if (!loaded || isFetchingMore || nextPage > totalPages) return;
     const count = [...displayFilms, ...extraItems].filter((f) => {
       const s = watchlistMap.get(Number(f.id));
-      return s !== "watched" && s !== "watching";
+      return s !== "watched" && s !== "watching" && s !== "abandoned";
     }).length;
     if (count >= 5) return;
     setIsFetchingMore(true);
@@ -170,7 +170,7 @@ export default function HorizontalSection({
   const allFilms = [...displayFilms, ...extraItems];
   const visibleFilms = allFilms.filter((f) => {
     const status = watchlistMap.get(Number(f.id));
-    return status !== "watched" && status !== "watching";
+    return status !== "watched" && status !== "watching" && status !== "abandoned";
   });
 
   const showMoreButton = loaded && nextPage <= totalPages && visibleFilms.length > 0;

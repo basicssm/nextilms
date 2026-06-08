@@ -32,6 +32,9 @@
   --watched: #26de81;
   --watched-bg: rgba(38, 222, 129, 0.12);
   --watched-border: rgba(38, 222, 129, 0.35);
+  --abandoned: #e05c6e;
+  --abandoned-bg: rgba(224, 92, 110, 0.12);
+  --abandoned-border: rgba(224, 92, 110, 0.35);
 
   /* ── Radio y espaciado ────────────────────────── */
   --radius-sm: 6px;
