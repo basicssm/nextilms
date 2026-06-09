@@ -97,6 +97,17 @@ input, textarea, select {
   opacity: 0.5;
 }
 
+/* ── Error banner ───────────────────────────────── */
+.error-banner {
+  margin: 12px 0;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 101, 132, 0.35);
+  background: rgba(255, 101, 132, 0.1);
+  color: #ff6584;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
+
 /* ── Skeleton shimmer animation ─────────────────── */
 @keyframes shimmer {
   0% { background-position: -400px 0; }

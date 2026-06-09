@@ -316,8 +316,8 @@ function groupByMonth(items: WatchlistItem[]): { label: string; count: number }[
 
 export default function StatsPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, loading: watchlistLoading } = useFullWatchlist();
-  const { rows: episodeRows, loading: episodesLoading } = useWatchedEpisodesAll();
+  const { items, loading: watchlistLoading, error: watchlistError } = useFullWatchlist();
+  const { rows: episodeRows, loading: episodesLoading, error: episodesError } = useWatchedEpisodesAll();
 
   const loading = authLoading || watchlistLoading || episodesLoading;
 
@@ -605,6 +605,10 @@ export default function StatsPage() {
             <h1 className="page-title">Mis estadísticas</h1>
             <p className="page-sub">Un resumen de tu actividad como espectador</p>
           </div>
+
+          {(watchlistError || episodesError) && (
+            <div className="error-banner">{watchlistError ?? episodesError}</div>
+          )}
 
           {loading ? (
             <div className="loading-state">

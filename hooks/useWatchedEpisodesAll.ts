@@ -13,6 +13,7 @@ export function useWatchedEpisodesAll() {
   const { user } = useAuth();
   const [rows, setRows] = useState<EpisodeRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
     if (!user) {
@@ -21,11 +22,17 @@ export function useWatchedEpisodesAll() {
       return;
     }
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("watched_episodes")
       .select("series_id, season_number, episode_number, watched_at")
       .eq("user_id", user.id);
-    setRows((data as EpisodeRow[]) ?? []);
+    if (error) {
+      console.error("Error al cargar los episodios vistos:", error.message);
+      setError("No se pudieron cargar tus episodios vistos");
+    } else {
+      setError(null);
+      setRows((data as EpisodeRow[]) ?? []);
+    }
     setLoading(false);
   }, [user]);
 
@@ -33,5 +40,5 @@ export function useWatchedEpisodesAll() {
     fetchAll();
   }, [fetchAll]);
 
-  return { rows, loading };
+  return { rows, loading, error };
 }

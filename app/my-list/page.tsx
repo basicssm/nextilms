@@ -319,7 +319,7 @@ function KanbanColumn({
 export default function MyListPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { items, loading, removeItem, changeStatus } = useFullWatchlist();
+  const { items, loading, error, removeItem, changeStatus } = useFullWatchlist();
 
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("recent");
@@ -457,6 +457,8 @@ export default function MyListPage() {
             </div>
           )}
         </div>
+
+        {error && <div className="error-banner">{error}</div>}
 
         {loading ? (
           <div className="loading-state">Cargando tu lista...</div>
