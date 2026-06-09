@@ -13,7 +13,11 @@ export function useWatchlistMap(): Map<number, WatchlistStatus> {
       .from("watchlist")
       .select("film_id,status")
       .eq("user_id", user.id)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Error al cargar el mapa de la watchlist:", error.message);
+          return;
+        }
         const m = new Map<number, WatchlistStatus>();
         for (const item of (data ?? [])) m.set(item.film_id, item.status as WatchlistStatus);
         setMap(m);
@@ -27,18 +31,25 @@ export function useWatchlist(filmId?: number) {
   const { user } = useAuth();
   const [item, setItem] = useState<WatchlistItem | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchItem = useCallback(async () => {
     if (!user || !filmId) {
       setItem(null);
       return;
     }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("watchlist")
       .select("*")
       .eq("user_id", user.id)
       .eq("film_id", filmId)
       .maybeSingle();
+    if (error) {
+      console.error("Error al cargar el título de la watchlist:", error.message);
+      setError("No se pudo cargar el estado de tu lista");
+      return;
+    }
+    setError(null);
     setItem(data ?? null);
   }, [user, filmId]);
 
@@ -60,7 +71,13 @@ export function useWatchlist(filmId?: number) {
       if (item?.status === status) {
         setItem(null);
         const { error } = await supabase.from("watchlist").delete().eq("id", item.id);
-        if (error) setItem(prev);
+        if (error) {
+          console.error("Error al quitar de la watchlist:", error.message);
+          setError("No se pudo actualizar tu lista");
+          setItem(prev);
+        } else {
+          setError(null);
+        }
       } else {
         const { data, error } = await supabase
           .from("watchlist")
@@ -78,7 +95,13 @@ export function useWatchlist(filmId?: number) {
           )
           .select()
           .single();
-        if (!error && data) setItem(data as WatchlistItem);
+        if (error) {
+          console.error("Error al guardar en la watchlist:", error.message);
+          setError("No se pudo actualizar tu lista");
+        } else if (data) {
+          setError(null);
+          setItem(data as WatchlistItem);
+        }
       }
       setLoading(false);
     },
@@ -94,7 +117,13 @@ export function useWatchlist(filmId?: number) {
         .eq("id", item.id)
         .select()
         .single();
-      if (!error && data) setItem(data as WatchlistItem);
+      if (error) {
+        console.error("Error al guardar la valoración:", error.message);
+        setError("No se pudo guardar la valoración");
+      } else if (data) {
+        setError(null);
+        setItem(data as WatchlistItem);
+      }
     },
     [user, item]
   );
@@ -108,18 +137,25 @@ export function useWatchlist(filmId?: number) {
         .eq("id", item.id)
         .select()
         .single();
-      if (!error && data) setItem(data as WatchlistItem);
+      if (error) {
+        console.error("Error al guardar las notas:", error.message);
+        setError("No se pudieron guardar las notas");
+      } else if (data) {
+        setError(null);
+        setItem(data as WatchlistItem);
+      }
     },
     [user, item]
   );
 
-  return { item, loading, setStatus, updateRating, updateNotes, refetch: fetchItem };
+  return { item, loading, error, setStatus, updateRating, updateNotes, refetch: fetchItem };
 }
 
 export function useFullWatchlist() {
   const { user } = useAuth();
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
     if (!user) {
@@ -127,12 +163,18 @@ export function useFullWatchlist() {
       return;
     }
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("watchlist")
       .select("*")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
-    setItems((data as WatchlistItem[]) ?? []);
+    if (error) {
+      console.error("Error al cargar la watchlist:", error.message);
+      setError("No se pudo cargar tu lista. Inténtalo de nuevo.");
+    } else {
+      setError(null);
+      setItems((data as WatchlistItem[]) ?? []);
+    }
     setLoading(false);
   }, [user]);
 
@@ -144,7 +186,13 @@ export function useFullWatchlist() {
     const prev = items;
     setItems((current) => current.filter((i) => i.id !== id));
     const { error } = await supabase.from("watchlist").delete().eq("id", id);
-    if (error) setItems(prev);
+    if (error) {
+      console.error("Error al eliminar de la watchlist:", error.message);
+      setError("No se pudo eliminar el título");
+      setItems(prev);
+    } else {
+      setError(null);
+    }
   };
 
   const changeStatus = async (id: string, status: WatchlistStatus) => {
@@ -154,12 +202,16 @@ export function useFullWatchlist() {
       .eq("id", id)
       .select()
       .single();
-    if (!error && data) {
+    if (error) {
+      console.error("Error al cambiar el estado:", error.message);
+      setError("No se pudo cambiar el estado del título");
+    } else if (data) {
+      setError(null);
       setItems((prev) =>
         prev.map((i) => (i.id === id ? (data as WatchlistItem) : i))
       );
     }
   };
 
-  return { items, loading, refetch: fetchAll, removeItem, changeStatus };
+  return { items, loading, error, refetch: fetchAll, removeItem, changeStatus };
 }

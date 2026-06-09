@@ -8,6 +8,7 @@ export function useUserPlatforms() {
   const [platforms, setPlatforms] = useState<UserPlatform[]>([]);
   const [platformIds, setPlatformIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPlatforms = useCallback(async () => {
     if (!user) {
@@ -17,14 +18,20 @@ export function useUserPlatforms() {
       return;
     }
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_platforms")
       .select("*")
       .eq("user_id", user.id)
       .order("provider_name");
-    const items = (data as UserPlatform[]) ?? [];
-    setPlatforms(items);
-    setPlatformIds(new Set(items.map((p) => p.provider_id)));
+    if (error) {
+      console.error("Error al cargar tus plataformas:", error.message);
+      setError("No se pudieron cargar tus plataformas");
+    } else {
+      setError(null);
+      const items = (data as UserPlatform[]) ?? [];
+      setPlatforms(items);
+      setPlatformIds(new Set(items.map((p) => p.provider_id)));
+    }
     setLoading(false);
   }, [user]);
 
@@ -36,11 +43,17 @@ export function useUserPlatforms() {
     async (platform: { provider_id: number; provider_name: string; logo_path: string }) => {
       if (!user) return;
       if (platformIds.has(platform.provider_id)) {
-        await supabase
+        const { error } = await supabase
           .from("user_platforms")
           .delete()
           .eq("user_id", user.id)
           .eq("provider_id", platform.provider_id);
+        if (error) {
+          console.error("Error al quitar la plataforma:", error.message);
+          setError("No se pudieron actualizar tus plataformas");
+          return;
+        }
+        setError(null);
         setPlatformIds((prev) => {
           const next = new Set(prev);
           next.delete(platform.provider_id);
@@ -53,7 +66,11 @@ export function useUserPlatforms() {
           .insert({ user_id: user.id, ...platform })
           .select()
           .single();
-        if (!error && data) {
+        if (error) {
+          console.error("Error al añadir la plataforma:", error.message);
+          setError("No se pudieron actualizar tus plataformas");
+        } else if (data) {
+          setError(null);
           setPlatformIds((prev) => new Set([...prev, platform.provider_id]));
           setPlatforms((prev) => [...prev, data as UserPlatform]);
         }
@@ -62,5 +79,5 @@ export function useUserPlatforms() {
     [user, platformIds]
   );
 
-  return { platforms, platformIds, loading, toggle, refetch: fetchPlatforms };
+  return { platforms, platformIds, loading, error, toggle, refetch: fetchPlatforms };
 }

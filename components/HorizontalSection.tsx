@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, MutableRefObject } from "react";
 import useSWR from "swr";
 import { Film as FilmType, WatchlistStatus, UserPlatform } from "@/types";
 import { SectionConfig } from "@/lib/dashboardConfig";
-import { normalizeItem, buildSectionUrl } from "@/utils/tmdb";
+import { normalizeItem, buildSectionUrl, RawTmdbItem } from "@/utils/tmdb";
 import Film from "@/components/Film";
 import UpcomingCard from "@/components/UpcomingCard";
 
@@ -13,16 +13,6 @@ const CARD_GAP = 12;
 const SCROLL_CARDS = 3;
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
-type RawItem = {
-  id: string | number;
-  title?: string;
-  name?: string;
-  poster_path: string;
-  vote_average: number;
-  release_date?: string;
-  first_air_date?: string;
-};
 
 type Props = {
   section: SectionConfig;
@@ -88,7 +78,7 @@ export default function HorizontalSection({
   // Deduplicate against already-shown films across sections
   useEffect(() => {
     if (!data) return;
-    const all: FilmType[] = (data.results ?? []).map((item: RawItem) =>
+    const all: FilmType[] = (data.results ?? []).map((item: RawTmdbItem) =>
       normalizeItem(item)
     );
     const unique = all.filter((f) => !seenIds.current.has(f.id));
@@ -100,7 +90,7 @@ export default function HorizontalSection({
 
   useEffect(() => {
     if (!moreData) return;
-    const all: FilmType[] = (moreData.results ?? []).map((item: RawItem) =>
+    const all: FilmType[] = (moreData.results ?? []).map((item: RawTmdbItem) =>
       normalizeItem(item)
     );
     const unique = all.filter((f) => !seenIds.current.has(f.id));

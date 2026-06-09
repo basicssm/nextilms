@@ -42,7 +42,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${syne.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
-      <head />
+      <head>
+        {/* Aplica el color de acento guardado antes del primer render (evita flash) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var a=localStorage.getItem("ww-accent-override");if(a)document.documentElement.style.setProperty("--accent",a)}catch(e){}`,
+          }}
+        />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

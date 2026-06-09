@@ -8,6 +8,7 @@ import NavBar from "@/components/NavBar";
 import Films from "@/components/Films";
 import Back from "@/components/Back";
 import { useRouter, useSearchParams } from "next/navigation";
+import { normalizeSearchItem, RawTmdbItem } from "@/utils/tmdb";
 
 type MediaType = "all" | "film" | "series";
 
@@ -18,36 +19,6 @@ function buildSearchUrl(mediaType: MediaType, query: string, page: number): stri
   }
   const endpoint = mediaType === "series" ? "tv" : "movie";
   return `${API_BASE_URL}/search/${endpoint}?${auth}&query=${encodeURIComponent(query)}&page=${page}&include_adult=false`;
-}
-
-function normalizeItem(
-  item: {
-    id: string;
-    title?: string;
-    name?: string;
-    poster_path: string;
-    vote_average: number;
-    release_date?: string;
-    first_air_date?: string;
-    media_type?: string;
-  },
-  fallback: "film" | "series" = "film"
-): Film | null {
-  if (item.media_type === "person") return null;
-  const mt =
-    item.media_type === "tv"
-      ? "series"
-      : item.media_type === "movie"
-      ? "film"
-      : fallback;
-  return {
-    id: item.id,
-    title: item.title ?? item.name ?? "",
-    poster_path: item.poster_path,
-    vote_average: item.vote_average,
-    release_date: item.release_date ?? item.first_air_date,
-    mediaType: mt,
-  };
 }
 
 function SearchContent({ search_param }: { search_param: string }) {
@@ -76,7 +47,7 @@ function SearchContent({ search_param }: { search_param: string }) {
       if (data.results) {
         const fallback = mediaType === "series" ? "series" : "film";
         const normalized = data.results
-          .map((item: Parameters<typeof normalizeItem>[0]) => normalizeItem(item, fallback))
+          .map((item: RawTmdbItem) => normalizeSearchItem(item, fallback))
           .filter((f: Film | null): f is Film => f !== null);
         setFilms((prev) => [...prev, ...normalized]);
         hasMoreRef.current = pageRef.current < (data.total_pages ?? 1);

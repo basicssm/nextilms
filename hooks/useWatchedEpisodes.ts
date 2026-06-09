@@ -17,11 +17,15 @@ export function useWatchedEpisodes(seriesId: number) {
       setWatched(new Set());
       return;
     }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("watched_episodes")
       .select("season_number,episode_number")
       .eq("user_id", user.id)
       .eq("series_id", seriesId);
+    if (error) {
+      console.error("Error al cargar episodios vistos:", error.message);
+      return;
+    }
     setWatched(
       new Set(
         (data ?? []).map((r: { season_number: number; episode_number: number }) =>
@@ -56,25 +60,33 @@ export function useWatchedEpisodes(seriesId: number) {
       if (!user) return;
       const k = toKey(season, episode);
       if (watched.has(k)) {
-        await supabase
+        const { error } = await supabase
           .from("watched_episodes")
           .delete()
           .eq("user_id", user.id)
           .eq("series_id", seriesId)
           .eq("season_number", season)
           .eq("episode_number", episode);
+        if (error) {
+          console.error("Error al desmarcar el episodio:", error.message);
+          return;
+        }
         setWatched((prev) => {
           const next = new Set(prev);
           next.delete(k);
           return next;
         });
       } else {
-        await supabase.from("watched_episodes").insert({
+        const { error } = await supabase.from("watched_episodes").insert({
           user_id: user.id,
           series_id: seriesId,
           season_number: season,
           episode_number: episode,
         });
+        if (error) {
+          console.error("Error al marcar el episodio:", error.message);
+          return;
+        }
         setWatched((prev) => new Set([...prev, k]));
       }
     },
@@ -86,12 +98,16 @@ export function useWatchedEpisodes(seriesId: number) {
       if (!user || episodeNumbers.length === 0) return;
       const allWatched = episodeNumbers.every((ep) => watched.has(toKey(season, ep)));
       if (allWatched) {
-        await supabase
+        const { error } = await supabase
           .from("watched_episodes")
           .delete()
           .eq("user_id", user.id)
           .eq("series_id", seriesId)
           .eq("season_number", season);
+        if (error) {
+          console.error("Error al desmarcar la temporada:", error.message);
+          return;
+        }
         setWatched((prev) => {
           const next = new Set(prev);
           episodeNumbers.forEach((ep) => next.delete(toKey(season, ep)));
@@ -106,9 +122,13 @@ export function useWatchedEpisodes(seriesId: number) {
             season_number: season,
             episode_number: ep,
           }));
-        await supabase
+        const { error } = await supabase
           .from("watched_episodes")
           .upsert(toInsert, { onConflict: "user_id,series_id,season_number,episode_number" });
+        if (error) {
+          console.error("Error al marcar la temporada:", error.message);
+          return;
+        }
         setWatched((prev) =>
           new Set([...prev, ...toInsert.map((r) => toKey(r.season_number, r.episode_number))])
         );

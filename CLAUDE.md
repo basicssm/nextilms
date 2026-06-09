@@ -34,12 +34,7 @@ NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
-`apiconfig.ts` is **gitignored** but required by many imports (`@/apiconfig`). On a fresh clone it must be created with:
-```ts
-export const API_KEY: string = process.env.NEXT_PUBLIC_TMDB_API_KEY ?? '';
-export const API_BASE_URL: string = 'https://api.themoviedb.org/3';
-```
-TMDB requests append `api_key=${API_KEY}&language=es-ES`. Discover queries use `watch_region=ES`. Image URL bases (w185/w342/w500/w1280/original) are constants in `utils/constants.ts` — use those, don't hardcode.
+`apiconfig.ts` (project root, imported as `@/apiconfig`) exports the TMDB config: `API_KEY` (read from `NEXT_PUBLIC_TMDB_API_KEY`) and `API_BASE_URL`. TMDB requests append `api_key=${API_KEY}&language=es-ES`. Discover queries use `watch_region=ES`. Image URL bases (w185/w342/w500/w1280/original) are constants in `utils/constants.ts` — use those, don't hardcode.
 
 `utils/tmdb.ts#buildSectionUrl` builds discover URLs **manually** (not `URLSearchParams`) because TMDB needs literal `|` in `with_genres` / `with_watch_providers`.
 
@@ -71,10 +66,12 @@ TMDB requests append `api_key=${API_KEY}&language=es-ES`. Discover queries use `
 
 ### Custom Hooks
 - **`useAuth()`** — `context/AuthContext.tsx`; `{ user, session, loading, signOut }`
-- **`useWatchlist(filmId)`** — `hooks/useWatchlist.ts`; `{ item, loading, setStatus, updateRating, updateNotes, refetch }`. `setStatus` toggles off (deletes) when the same status is clicked. Also exports `useWatchlistMap()` (film_id → status Map) and `useFullWatchlist()` (`{ items, loading, refetch, removeItem, changeStatus }`)
-- **`useUserPlatforms()`** — `{ platforms, platformIds (Set), loading, toggle, refetch }`
+- **`useWatchlist(filmId)`** — `hooks/useWatchlist.ts`; `{ item, loading, error, setStatus, updateRating, updateNotes, refetch }`. `setStatus` toggles off (deletes) when the same status is clicked. Also exports `useWatchlistMap()` (film_id → status Map) and `useFullWatchlist()` (`{ items, loading, error, refetch, removeItem, changeStatus }`)
+- **`useUserPlatforms()`** — `{ platforms, platformIds (Set), loading, error, toggle, refetch }`
 - **`useWatchedEpisodes(seriesId)`** — per-series episode set; `{ isWatched, watchedInSeason, toggle, markSeason, watchedCount }`
-- **`useWatchedEpisodesAll()`** — all episode rows for the user (feeds gamification/stats)
+- **`useWatchedEpisodesAll()`** — all episode rows for the user (feeds gamification/stats); returns `{ rows, loading, error }`
+
+Supabase hooks expose an `error: string | null` with a user-facing Spanish message; pages render it with the global `.error-banner` class (defined in `styles/globals.css`). Mutations only update local state after the query succeeds.
 - **`useGamification(items, episodeRows)`** — pure client-side computation: points = films×50 + series×75 + episodes×3 + ratings×10 + notes×15; 5 levels (Espectador → Maestro del Séptimo Arte) with unlocks (`genre_stats`, `accent_picker`, `marathon_mode`, `gold_ring`); 10 achievement defs. Season 0 (specials) episodes are excluded everywhere
 - **`useTmdbDetails(items)`** — batch-enriches watchlist items with TMDB genres/dates/popularity (batches of 20)
 - **`useSearchSuggestions(query, mediaType)`** — debounced (300ms) + aborted TMDB search, min 3 chars, max 6 results
@@ -97,7 +94,9 @@ Detail (hero backdrop + poster + metadata + trailers + share button)
   └── EpisodeTracker (series; per-episode & per-season toggles; marathon mode)
 CastSection · RelatedTitles (recommendations)
 Stats: GamificationPanel (level progress, achievements, AccentColorPicker
-  unlocked at lvl 3 — persists --accent override in localStorage)
+  unlocked at lvl 3 — persists --accent override in localStorage
+  ("ww-accent-override"), reapplied at startup by an inline script in
+  app/layout.tsx)
 ```
 
 ### Database Schema (Supabase)
@@ -126,6 +125,5 @@ All tables have RLS: users can only read/write their own rows.
 `next.config.js` allows `image.tmdb.org` and `picsum.photos` (poster fallback) via `remotePatterns`.
 
 ### Gotchas
-- `README.md` describes a different project (an LMS) — it is stale boilerplate; trust this file and the code instead
 - TMDB ids are numbers in Supabase (`film_id integer`) but `Film.id` is a string — `Number(...)`/`String(...)` conversions are deliberate at the boundaries
 - Season 0 = TMDB "Specials"; excluded from episode counts, points and stats
