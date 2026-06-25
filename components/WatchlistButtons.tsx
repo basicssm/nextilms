@@ -20,7 +20,7 @@ type Props = {
   ) => Promise<void>;
 };
 
-const BUTTONS = (Object.entries(WATCHLIST_STATUS_CONFIG) as [WatchlistStatus, typeof WATCHLIST_STATUS_CONFIG[WatchlistStatus]][]).map(
+const ALL_BUTTONS = (Object.entries(WATCHLIST_STATUS_CONFIG) as [WatchlistStatus, typeof WATCHLIST_STATUS_CONFIG[WatchlistStatus]][]).map(
   ([status, cfg]) => ({ status, ...cfg })
 );
 
@@ -32,6 +32,9 @@ export default function WatchlistButtons({
   loading,
   setStatus,
 }: Props) {
+  const BUTTONS = mediaType === "film"
+    ? ALL_BUTTONS.filter((b) => b.status !== "abandoned")
+    : ALL_BUTTONS;
   const { user } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const pendingStatusRef = useRef<WatchlistStatus | null>(null);
@@ -150,10 +153,10 @@ export default function WatchlistButtons({
         @media (max-width: 480px) {
           .watchlist-btns {
             gap: 6px;
-            flex-wrap: nowrap;
           }
           .wl-btn {
             flex: 1;
+            min-width: calc(50% - 6px);
             padding: 9px 8px;
             justify-content: center;
           }

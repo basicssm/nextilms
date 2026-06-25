@@ -47,7 +47,7 @@ export type UserPlatform = {
   logo_path: string;
 };
 
-export type WatchlistStatus = "watching" | "to_watch" | "watched";
+export type WatchlistStatus = "watching" | "to_watch" | "watched" | "abandoned";
 
 export type GamificationLevel = {
   level: 1 | 2 | 3 | 4 | 5;

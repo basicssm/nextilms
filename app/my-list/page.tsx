@@ -476,7 +476,7 @@ export default function MyListPage() {
           <>
             {/* Kanban desktop */}
             <div className="kanban">
-              {(["watching", "to_watch", "watched"] as WatchlistStatus[]).map((s) => (
+              {(["watching", "to_watch", "watched", "abandoned"] as WatchlistStatus[]).map((s) => (
                 <KanbanColumn
                   key={s}
                   status={s}
@@ -490,7 +490,7 @@ export default function MyListPage() {
             {/* Mobile: tabs + columna activa */}
             <div className="mobile-view">
               <div className="mobile-tabs">
-                {(["watching", "to_watch", "watched"] as WatchlistStatus[]).map((s) => {
+                {(["watching", "to_watch", "watched", "abandoned"] as WatchlistStatus[]).map((s) => {
                   const cfg = STATUS_CONFIG[s];
                   const count = byStatus(s).length;
                   return (
